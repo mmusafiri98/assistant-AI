@@ -140,120 +140,238 @@ EOD;
     </div>
 
     <script>
-        const speakBtn = document.getElementById('speak-btn');
-        const messagesDiv = document.getElementById('messages');
-        const video = document.getElementById('full-video');
+        <script>
+        // Récupération des éléments du DOM
+        const video = document.getElementById('assistant-video');
+        const chatHistoryDiv = document.getElementById('chat-history');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+        const voiceBtn = document.getElementById('voice-btn');
+        const voiceStatus = document.getElementById('voice-status');
+        const clearHistoryBtn = document.getElementById('clear-history-btn');
+
+        // Clé pour le stockage local de l'historique
+        const CHAT_HISTORY_STORAGE_KEY = 'veronica_ai_chat_history';
+
+        // Variables pour la reconnaissance vocale
         let recognition = null;
         let isListening = false;
+
+        // Historique de la conversation pour l'API Cohere
         let chatHistory = [];
 
-        function addMessage(text, sender) {
-            const msg = document.createElement('div');
-            msg.textContent = (sender === 'user' ? "👤 " : "🤖 ") + text;
-            messagesDiv.appendChild(msg);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        // Fonction pour ajouter un message à l'interface de chat
+        function addMessageToChat(message, sender, isTypingIndicator = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('chat-message');
+
+            if (sender === 'user') {
+                messageDiv.classList.add('user-message');
+            } else if (sender === 'ai') {
+                messageDiv.classList.add('ai-message');
+            }
+
+            if (isTypingIndicator) {
+                messageDiv.classList.add('typing-indicator');
+                messageDiv.textContent = message;
+            } else {
+                messageDiv.textContent = message;
+            }
+
+            chatHistoryDiv.appendChild(messageDiv);
+            chatHistoryDiv.scrollTop = chatHistoryDiv.scrollHeight;
+            return messageDiv;
         }
 
-        function speakText(text) {
-            if (!window.speechSynthesis) return;
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'fr-FR';
-            window.speechSynthesis.speak(utterance);
-        }
+        // Fonction pour afficher le texte lettre par lettre et gérer la synthèse vocale/vidéo
+        function speakAndShow(sentence) {
+            let index = 0;
+            const aiMessageDiv = addMessageToChat("", 'ai');
 
-        async function sendToAI(inputText) {
-            addMessage(inputText, 'user');
-            chatHistory.push({
-                role: 'USER',
-                message: inputText
+            function typeWriter() {
+                if (index < sentence.length) {
+                    aiMessageDiv.textContent += sentence.charAt(index);
+                    index++;
+                    setTimeout(typeWriter, 40);
+                }
+            }
+
+            typeWriter();
+
+            responsiveVoice.speak(sentence, "French Female", {
+                rate: 1,
+                pitch: 1,
+                onstart: () => {
+                    video.play(); // S'assure que la vidéo est bien en lecture au début de la parole
+                    sendBtn.disabled = true;
+                    userInput.disabled = true;
+                    voiceBtn.disabled = true;
+                },
+                onend: () => {
+                    // video.pause(); // C'est cette ligne que nous avons commentée/supprimée
+                    sendBtn.disabled = false;
+                    userInput.disabled = false;
+                    voiceBtn.disabled = false;
+                    userInput.focus();
+                    if (voiceStatus.textContent.includes("Vous avez dit")) {
+                        setTimeout(() => {
+                            voiceStatus.textContent = "";
+                        }, 2000);
+                    }
+                },
             });
+        }
 
+        // Fonction pour envoyer le message à l'API PHP
+        async function sendToAI(input, currentChatHistory) {
+            let typingIndicator = null;
             try {
-                const res = await fetch(window.location.href, {
+                sendBtn.disabled = true;
+                userInput.disabled = true;
+                voiceBtn.disabled = true;
+                typingIndicator = addMessageToChat("Veronica est en train d'écrire...", 'ai', true);
+
+                const response = await fetch(window.location.href, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        input: inputText,
-                        chat_history: chatHistory
-                    })
+                        input: input,
+                        model: 'cohere',
+                        chat_history: currentChatHistory,
+                    }),
                 });
-                const data = await res.json();
-                const response = data.response || "Désolé, je n'ai pas compris.";
-                chatHistory.push({
-                    role: 'CHATBOT',
-                    message: response
-                });
-                addMessage(response, 'ai'); // Affiche aussi le message
-                speakText(response); // Lit à voix haute
-            } catch (err) {
-                console.error("Erreur avec l'IA :", err);
-                speakText("Une erreur s'est produite. Veuillez réessayer.");
+
+                if (!response.ok) {
+                    const errorDetails = await response.text();
+                    console.error('Erreur de réponse du serveur:', response.status, errorDetails);
+                    throw new Error(`Erreur du serveur (${response.status}). Détails: ${errorDetails.substring(0, 100)}...`);
+                }
+
+                const result = await response.json();
+                return result.response;
+            } catch (error) {
+                console.error('Erreur lors de la communication avec l\'IA:', error);
+                return "Désolé, une erreur est survenue. Veuillez réessayer.";
+            } finally {
+                if (typingIndicator && typingIndicator.parentNode) {
+                    typingIndicator.parentNode.removeChild(typingIndicator);
+                }
+                sendBtn.disabled = false;
+                userInput.disabled = false;
+                voiceBtn.disabled = false;
+                userInput.focus();
             }
         }
 
+        // --- Logique de Reconnaissance Vocale (Web Speech API) ---
         function initSpeechRecognition() {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SpeechRecognition) {
-                alert("Votre navigateur ne supporte pas la reconnaissance vocale.");
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                recognition = new SpeechRecognition();
+
+                recognition.continuous = false;
+                recognition.interimResults = false;
+                recognition.lang = 'fr-FR';
+
+                recognition.onstart = function() {
+                    isListening = true;
+                    voiceBtn.classList.add('recording');
+                    voiceStatus.textContent = "🎤 Écoute en cours... Parlez maintenant !";
+                    voiceStatus.classList.add('listening');
+                };
+
+                recognition.onresult = function(event) {
+                    const transcript = event.results[0][0].transcript;
+                    userInput.value = transcript;
+                    voiceStatus.textContent = `Vous avez dit: "${transcript}"`;
+                    voiceStatus.classList.remove('listening');
+
+                    setTimeout(() => {
+                        sendBtn.click();
+                    }, 1000);
+                };
+
+                recognition.onerror = function(event) {
+                    isListening = false;
+                    voiceBtn.classList.remove('recording');
+                    voiceStatus.classList.remove('listening');
+
+                    let errorMessage = "Erreur de reconnaissance vocale.";
+                    switch (event.error) {
+                        case 'no-speech':
+                            errorMessage = "Aucune parole détectée. Réessayez.";
+                            break;
+                        case 'audio-capture':
+                            errorMessage = "Impossible d'accéder au microphone. Vérifiez les branchements.";
+                            break;
+                        case 'not-allowed':
+                            errorMessage = "Permission microphone refusée. Autorisez l'accès dans les paramètres du navigateur.";
+                            break;
+                        case 'network':
+                            errorMessage = "Erreur réseau pour la reconnaissance vocale.";
+                            break;
+                        case 'bad-grammar':
+                            errorMessage = "Impossible de comprendre la grammaire.";
+                            break;
+                        default:
+                            errorMessage = `Erreur inattendue: ${event.error}`;
+                    }
+                    voiceStatus.textContent = errorMessage;
+                    setTimeout(() => {
+                        voiceStatus.textContent = "";
+                    }, 5000);
+                };
+
+                recognition.onend = function() {
+                    isListening = false;
+                    voiceBtn.classList.remove('recording');
+                    if (!voiceStatus.textContent.includes("Vous avez dit")) {
+                        voiceStatus.textContent = "";
+                        voiceStatus.classList.remove('listening');
+                    }
+                };
+                return true;
+            } else {
+                voiceBtn.style.display = 'none';
+                console.warn('Reconnaissance vocale non supportée par ce navigateur.');
+                return false;
+            }
+        }
+
+        // Gestion du clic sur le bouton vocal
+        voiceBtn.addEventListener('click', function() {
+            if (!recognition) {
+                alert('La reconnaissance vocale n\'est pas disponible ou n\'a pas pu être initialisée sur votre navigateur.');
                 return;
             }
 
-            recognition = new SpeechRecognition();
-            recognition.lang = "fr-FR";
-            recognition.continuous = false;
-            recognition.interimResults = false;
-
-            recognition.onstart = () => {
-                isListening = true;
-                speakBtn.classList.add("recording");
-            };
-            recognition.onresult = (event) => {
-                const transcript = event.results[0][0].transcript;
-                sendToAI(transcript);
-            };
-            recognition.onerror = (event) => {
-                console.error("Erreur vocale :", event.error);
-            };
-            recognition.onend = () => {
-                isListening = false;
-                speakBtn.classList.remove("recording");
-            };
-        }
-
-        speakBtn.addEventListener('click', () => {
-            if (!recognition) return;
-            if (isListening) recognition.stop();
-            else {
+            if (isListening) {
+                recognition.stop();
+                voiceStatus.textContent = "Arrêt de l'écoute...";
+            } else {
                 navigator.mediaDevices.getUserMedia({
                         audio: true
                     })
-                    .then(stream => {
+                    .then(function(stream) {
                         stream.getTracks().forEach(track => track.stop());
                         recognition.start();
                     })
-                    .catch(() => alert("Accès au micro refusé."));
+                    .catch(function(err) {
+                        alert('Accès au microphone refusé. Veuillez autoriser l\'accès dans les paramètres de votre navigateur.');
+                        console.error('Erreur d\'accès au microphone:', err);
+                        voiceStatus.textContent = "Accès micro refusé.";
+                        setTimeout(() => {
+                            voiceStatus.textContent = "";
+                        }, 5000);
+                    });
             }
         });
 
-        window.onload = () => {
-            initSpeechRecognition();
-            const welcome = "Bienvenue dans cette modalité vidéo avec moi, Veronica AI. Vous pouvez discuter de n'importe quel sujet pour améliorer votre langue.";
-            addMessage(welcome, 'ai');
-            speakText(welcome);
-
-            setTimeout(() => {
-                video.play().catch(err => console.warn("Lecture auto bloquée :", err));
-            }, 500);
-
-            video.onerror = () => {
-                console.error("Erreur de chargement de la vidéo.");
-                speakText("⚠️ La vidéo n'a pas pu être chargée.");
-            };
-        };
     </script>
 </body>
 
 </html>
+
 
