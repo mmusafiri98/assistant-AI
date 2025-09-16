@@ -14,7 +14,7 @@ Tu es Veronica AI, une professeure de langue experte et patiente. Tu peux dialog
 EOD;
 
     $payload = json_encode([
-        "model" => "command-r-plus",
+        "model" => "command-a-vision-07-2025",
         "temperature" => 0.7,
         "max_tokens" => 300,
         "message" => $system_prompt,
@@ -254,5 +254,6 @@ EOD;
         };
     </script>
 </body>
+
 
 </html>
