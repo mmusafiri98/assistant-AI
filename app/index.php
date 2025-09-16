@@ -50,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($model === 'cohere') {
         $api_url = "https://api.cohere.ai/v1/chat";
         $data = [
-            "model" => "command-xlarge", // MODIFICATION : modèle valide
+            "model" => "command-a-vision-07-2025", // MODIFICATION : modèle valide
             "temperature" => 0.7,
             "max_tokens" => 300,
             "chat_history" => $chatHistory,
