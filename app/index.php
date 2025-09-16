@@ -72,7 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ];
         $headers = [
             'Content-Type: application/json',
-            'Authorization: Bearer Uw540GN865rNyiOs3VMnWhRaYQ97KAfudAHAnXzJ' // REMPLACER PAR VOTRE VRAIE CLÉ COHERE API EN PROD !
+            'Authorization: Bearer xTASVp3SAphp5gSwvtPVtsQbXrRtYaFT7Pb2o8gB' // REMPLACER PAR VOTRE VRAIE CLÉ COHERE API EN PROD !
         ];
 
         // Initialize cURL session
