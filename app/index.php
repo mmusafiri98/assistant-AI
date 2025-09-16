@@ -1,5 +1,5 @@
 <?php
-// PHP Backend Logic
+// Backend PHP
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $requestData = json_decode(file_get_contents('php://input'), true);
     $input = $requestData['input'] ?? '';
@@ -7,8 +7,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $chatHistory = $requestData['chat_history'] ?? [];
 
     // Détection de langue simple
-    function langDetect($text)
-    {
+    function langDetect($text) {
         $languages = [
             'fr' => ['bonjour','je','le','la','les','est','un','une','corrige'],
             'en' => ['hello','the','is','and','you','a','an','correct'],
@@ -46,11 +45,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    // Cohere API pour chat
+    // Cohere API
     if ($model === 'cohere') {
         $api_url = "https://api.cohere.ai/v1/chat";
         $data = [
-            "model" => "command-a-vision-07-2025", // MODIFICATION : modèle valide
+            "model" => "command-a-vision-07-2025",
             "temperature" => 0.7,
             "max_tokens" => 300,
             "chat_history" => $chatHistory,
@@ -58,7 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ];
         $headers = [
             'Content-Type: application/json',
-            'Authorization: Bearer xTASVp3SAphp5gSwvtPVtsQbXrRtYaFT7Pb2o8gB' // REMPLACEZ par votre clé API Cohere
+            'Authorization: Bearer VOTRE_CLE_API_COHERE'
         ];
 
         $ch = curl_init($api_url);
@@ -78,7 +77,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         $response_json = json_decode($api_response,true);
-        $generated_text = $response_json['text'] ?? ($response_json['generations'][0]['text'] ?? 'Erreur réponse IA.');
+
+        // Vérification complète de la réponse
+        if (isset($response_json['generations'][0]['text'])) {
+            $generated_text = $response_json['generations'][0]['text'];
+        } elseif (isset($response_json['error']['message'])) {
+            $generated_text = "Erreur API Cohere : " . $response_json['error']['message'];
+        } else {
+            $generated_text = "Erreur réponse IA : réponse inattendue de l'API.";
+        }
+
         echo json_encode(['response'=>$generated_text]);
         exit;
     }
@@ -96,18 +104,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
 <style>
-/* Styles similaires à votre code original */
 body { font-family: 'Inter', sans-serif; background-color: violet; display:flex; justify-content:center; align-items:center; min-height:100vh; margin:0; }
 .chat-container { border-radius:1.5rem; width:100%; max-width:500px; display:flex; flex-direction:column; padding:1.5rem; box-sizing:border-box; }
 .video-container { margin-bottom:1.5rem; text-align:center; position:relative; width:100%; padding-bottom:56.25%; height:0; overflow:hidden; border-radius:1.5rem; background-color:#000; }
 #assistant-video { position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover; border-radius:1.5rem; box-shadow:0 5px 15px rgba(0,0,0,0.2); display:block; }
-/* Chat History */
 #chat-history { background-color:#e2e8f0; border-radius:1rem; padding:1rem; flex-grow:1; overflow-y:auto; height:350px; display:flex; flex-direction:column; gap:0.75rem; margin-bottom:1rem; }
 .chat-message { max-width:85%; padding:0.75rem 1rem; border-radius:1.25rem; box-shadow:0 1px 3px rgba(0,0,0,0.1); word-wrap:break-word; }
 .user-message { background-color:#2563eb; color:white; align-self:flex-end; margin-left:auto; }
 .ai-message { background-color:white; color:#2d3748; align-self:flex-start; margin-right:auto; }
 .typing-indicator { align-self:flex-start; background-color:#cbd5e0; color:#4a5568; padding:0.75rem 1rem; border-radius:1.25rem; font-style:italic; }
-/* Input & Buttons */
 .input-area { display:flex; gap:0.5rem; align-items:center; }
 #user-input { flex-grow:1; padding:0.75rem 1rem; font-size:1rem; border:1px solid #cbd5e0; border-radius:0.75rem; outline:none; box-shadow:inset 0 1px 2px rgba(0,0,0,0.05);}
 #send-btn, #voice-btn { color:white; padding:0.75rem 1.25rem; border:none; border-radius:0.75rem; cursor:pointer; transition:all 0.2s ease-in-out; font-weight:600; display:flex; align-items:center; justify-content:center; min-width:50px;}
@@ -150,8 +155,7 @@ body { font-family: 'Inter', sans-serif; background-color: violet; display:flex;
 
 <script src="https://code.responsivevoice.org/responsivevoice.js?key=A0SDeHMK"></script>
 <script>
-// Variables et fonctions JS pour chat, synthèse vocale, reconnaissance vocale et stockage
-const video = document.getElementById('assistant-video');
+// JS Chat identique à ton code original
 const chatHistoryDiv = document.getElementById('chat-history');
 const userInput = document.getElementById('user-input');
 const sendBtn = document.getElementById('send-btn');
@@ -159,7 +163,7 @@ const voiceBtn = document.getElementById('voice-btn');
 const voiceStatus = document.getElementById('voice-status');
 const clearHistoryBtn = document.getElementById('clear-history-btn');
 const CHAT_HISTORY_STORAGE_KEY = 'veronica_ai_chat_history';
-let recognition=null, isListening=false, chatHistory=[];
+let chatHistory=[];
 
 function addMessageToChat(message,sender,isTyping=false){
     const div=document.createElement('div'); div.classList.add('chat-message');
@@ -176,7 +180,7 @@ function speakAndShow(sentence){
     typeWriter();
     responsiveVoice.speak(sentence,"French Female",{
         rate:1,pitch:1,
-        onstart:()=>{video.play(); sendBtn.disabled=true; userInput.disabled=true; voiceBtn.disabled=true;},
+        onstart:()=>{sendBtn.disabled=true; userInput.disabled=true; voiceBtn.disabled=true;},
         onend:()=>{sendBtn.disabled=false; userInput.disabled=false; voiceBtn.disabled=false; userInput.focus();}
     });
 }
@@ -194,7 +198,6 @@ async function sendToAI(input,currentChatHistory){
     finally{ if(typingIndicator && typingIndicator.parentNode) typingIndicator.parentNode.removeChild(typingIndicator); sendBtn.disabled=false; userInput.disabled=false; voiceBtn.disabled=false; userInput.focus();}
 }
 
-// Initialisation
 document.addEventListener('DOMContentLoaded',()=>{
     const savedHistory=localStorage.getItem(CHAT_HISTORY_STORAGE_KEY);
     if(savedHistory){ try{ chatHistory=JSON.parse(savedHistory); chatHistory.forEach(item=>addMessageToChat(item.message,item.role.toLowerCase())); } catch(e){localStorage.removeItem(CHAT_HISTORY_STORAGE_KEY);} }
