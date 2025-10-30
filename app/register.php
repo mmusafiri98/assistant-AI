@@ -9,13 +9,14 @@ session_start([
 $error_message = "";
 $success_message = "";
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Paramètres de connexion locale
-    $servername = "localhost";
-    $dbname = "veronica_ai_login";
-    $username_db = "root";
-    $password_db = "";
+// --- Configuration base de données NEON ---
+$db_host = "ep-autumn-salad-adwou7x2-pooler.c-2.us-east-1.aws.neon.tech";
+$db_port = "5432";
+$db_name = "veronica_db_login";
+$db_user = "neondb_owner";
+$db_pass = "npg_QolPDv5L9gVj";
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = htmlspecialchars(trim($_POST['username']));
     $password = trim($_POST['password']);
     $confirm_password = trim($_POST['confirm_password']);
@@ -24,8 +25,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error_message = "❌ Les mots de passe ne correspondent pas.";
     } else {
         try {
-            $conn = new PDO("mysql:host=$servername;dbname=$dbname;charset=utf8", $username_db, $password_db);
-            $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            // Connexion PostgreSQL Neon
+            $dsn = "pgsql:host=$db_host;port=$db_port;dbname=$db_name;sslmode=require";
+            $conn = new PDO($dsn, $db_user, $db_pass, [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
+            ]);
 
             // Vérifier si le nom d'utilisateur existe déjà
             $stmt = $conn->prepare("SELECT COUNT(*) FROM users WHERE username = :username");
@@ -51,10 +55,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
         } catch (PDOException $e) {
-            $error_message = "⚠️ Erreur de connexion à la base de données : " . htmlspecialchars($e->getMessage());
+            $error_message = "⚠️ Erreur de connexion à Neon : " . htmlspecialchars($e->getMessage());
         }
-
-        $conn = null;
     }
 }
 ?>
@@ -65,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Veronica AI Assistant pour apprende l anglais – Inscription</title>
+    <title>Veronica AI – Inscription</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
@@ -82,7 +84,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             position: relative;
         }
 
-        /* Superposition pour lisibilité */
         body::before {
             content: "";
             position: fixed;
@@ -94,8 +95,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             backdrop-filter: blur(4px);
             z-index: 0;
         }
-
-
 
         .navbar {
             background: rgba(255, 255, 255, 0.25);
@@ -115,11 +114,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         .register-card {
-            background: rgba(255, 255, 255, 0.25);
+            position: relative;
+            z-index: 1;
+            background: rgba(255, 255, 255, 0.3);
             backdrop-filter: blur(20px);
             border-radius: 20px;
             padding: 40px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             text-align: center;
             width: 380px;
             animation: fadeIn 0.8s ease-in-out;
@@ -179,6 +180,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             padding: 10px;
             font-size: 0.9rem;
             color: #334155;
+            z-index: 1;
         }
 
         .social-icons img {
@@ -192,15 +194,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(15px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         @media (max-width: 500px) {
@@ -217,12 +212,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 
 <body>
-    <!-- Barre de navigation -->
     <nav class="navbar">
-        <img src="create.png" alt="Logo LinguaAI">
+        <img src="create.png" alt="Logo Veronica AI">
     </nav>
 
-    <!-- Carte d'inscription -->
     <div class="register-card mt-5">
         <h2>Créer un compte</h2>
         <p>Rejoins <strong style="color:#4f46e5;">Veronica AI</strong> et commence ton voyage linguistique 🌍</p>
@@ -245,17 +238,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <p class="mt-3">Déjà un compte ? <a href="login.php" style="color:#4f46e5; font-weight:500;">Connecte-toi ici</a>.</p>
     </div>
 
-    <!-- Pied de page -->
     <footer>
-        <p>Suivez <strong>LinguaAI</strong> sur les réseaux sociaux</p>
+        <p>Suivez <strong>Veronica AI</strong> sur les réseaux sociaux</p>
         <div class="social-icons">
             <img src="Logo Facebook.svg" alt="Facebook">
             <img src="Logo instagram.svg" alt="Instagram">
         </div>
     </footer>
 </body>
-
 </html>
 
 <?php ob_end_flush(); ?>
+
+
 
