@@ -6,7 +6,7 @@ session_start([
     'cookie_samesite' => 'Strict',
 ]);
 
-// Traitement du formulaire
+// ===== TRAITEMENT DU FORMULAIRE =====
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $how_found = htmlspecialchars(trim($_POST['how_found'] ?? ''));
     $level = htmlspecialchars(trim($_POST['level'] ?? ''));
@@ -18,17 +18,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $days = intval($_POST['days'] ?? 0);
     $minutes = intval($_POST['minutes'] ?? 0);
 
+    // Vérification des champs
     if ($how_found === '' || $level === '' || $goal === '' || $duration === '' || $motivation === '' || $accent === '') {
         $_SESSION['quiz_error'] = "Merci de remplir tous les champs obligatoires.";
     } else {
         try {
-            $conn = new PDO("mysql:host=localhost;dbname=veronica_ai_login;charset=utf8", "root", "", [
+            // ===== CONNEXION À NEON (PostgreSQL) =====
+            $dsn = "pgsql:host=ep-autumn-salad-adwou7x2-pooler.c-2.us-east-1.aws.neon.tech;port=5432;dbname=veronica_db_login;sslmode=require";
+            $username_db = "neondb_owner";
+            $password_db = "npg_QolPDv5L9gVj";
+
+            $conn = new PDO($dsn, $username_db, $password_db, [
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_EMULATE_PREPARES => false,
             ]);
 
-            $sql = "INSERT INTO user_quiz (username, how_found, level, goal, duration, motivation, skills)
-                    VALUES (:username, :how_found, :level, :goal, :duration, :motivation, :skills)";
+            // ===== ENREGISTREMENT DES DONNÉES =====
+            $sql = "INSERT INTO user_quiz (username, how_found, level, goal, duration, motivation, skills, accent, days, minutes)
+                    VALUES (:username, :how_found, :level, :goal, :duration, :motivation, :skills, :accent, :days, :minutes)";
+
             $stmt = $conn->prepare($sql);
             $username = $_SESSION['username'] ?? 'invité';
 
@@ -39,20 +47,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ':goal' => $goal,
                 ':duration' => $duration,
                 ':motivation' => $motivation,
-                ':skills' => $skills
+                ':skills' => $skills,
+                ':accent' => $accent,
+                ':days' => $days,
+                ':minutes' => $minutes
             ]);
 
             $conn = null;
             header("Location: thankyou.php");
             exit;
         } catch (PDOException $e) {
-            error_log("DB ERROR: " . $e->getMessage());
+            error_log("Erreur BDD : " . $e->getMessage());
             $_SESSION['quiz_error'] = "Une erreur est survenue lors de l'enregistrement.";
         }
     }
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -255,3 +265,4 @@ window.onload = () => {
 </html>
 
 <?php ob_end_flush(); ?>
+
