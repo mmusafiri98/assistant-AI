@@ -11,7 +11,7 @@ if (!isset($_SESSION['initiated'])) {
     $_SESSION['initiated'] = true;
 }
 
-// --- Configuration base de données NEON ---
+// --- Configuration Neon PostgreSQL ---
 $db_host = "ep-autumn-salad-adwou7x2-pooler.c-2.us-east-1.aws.neon.tech";
 $db_port = "5432";
 $db_name = "veronica_db_login";
@@ -20,12 +20,12 @@ $db_pass = "npg_QolPDv5L9gVj";
 
 // --- Gestion du login ---
 $error_message = "";
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = htmlspecialchars(trim($_POST['username']));
-    $password = htmlspecialchars(trim($_POST['password']));
+    $password = trim($_POST['password']);
 
     try {
-        // Connexion PostgreSQL (Neon)
         $dsn = "pgsql:host=$db_host;port=$db_port;dbname=$db_name;sslmode=require";
         $conn = new PDO($dsn, $db_user, $db_pass, [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
@@ -40,7 +40,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($result && password_verify($password, $result['password'])) {
             $_SESSION['username'] = $username;
             $_SESSION['is_logged_in'] = true;
-
             header("Location: description.php");
             exit();
         } else {
@@ -196,7 +195,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     </style>
 </head>
-
 <body>
     <nav class="navbar">
         <img src="create.png" alt="Logo Veronica AI">
@@ -232,3 +230,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </html>
 
 <?php ob_end_flush(); ?>
+
