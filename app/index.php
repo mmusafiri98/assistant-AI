@@ -59,8 +59,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <style>
         body {
             font-family: "Poppins", sans-serif;
-            background: linear-gradient(135deg, #7dd3fc, #a78bfa);
-            background-attachment: fixed;
+            background: url("drapeau.jpg") no-repeat center center fixed;
+            background-size: cover;
             display: flex;
             flex-direction: column;
             min-height: 100vh;
@@ -68,6 +68,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             align-items: center;
             margin: 0;
             overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Superposition pour lisibilité */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(4px);
+            z-index: 0;
         }
 
         .navbar {
@@ -88,11 +102,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         .login-card {
-            background: rgba(255, 255, 255, 0.25);
+            position: relative;
+            z-index: 1;
+            background: rgba(255, 255, 255, 0.3);
             backdrop-filter: blur(20px);
             border-radius: 20px;
             padding: 40px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             text-align: center;
             width: 360px;
             animation: fadeIn 0.8s ease-in-out;
@@ -147,6 +163,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             padding: 10px;
             font-size: 0.9rem;
             color: #334155;
+            z-index: 1;
         }
 
         .social-icons img {
@@ -179,7 +196,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <body>
     <nav class="navbar">
-        <img src="create.png" alt="Logo LinguaAI">
+        <img src="create.png" alt="Logo Veronica AI">
     </nav>
 
     <div class="login-card mt-5">
@@ -196,7 +213,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <button type="submit" class="btn-login">Se connecter</button>
         </form>
 
-        <p class="mt-3">Pas encore de compte ? <a href="register.php" style="color:#4f46e5; font-weight:500;">Inscris-toi ici</a>.</p>
+        <p class="mt-3">Pas encore de compte ? 
+            <a href="register.php" style="color:#4f46e5; font-weight:500;">Inscris-toi ici</a>.
+        </p>
     </div>
 
     <footer>
