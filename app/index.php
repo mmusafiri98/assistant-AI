@@ -11,21 +11,27 @@ if (!isset($_SESSION['initiated'])) {
     $_SESSION['initiated'] = true;
 }
 
+// --- Configuration base de données NEON ---
+$db_host = "ep-autumn-salad-adwou7x2-pooler.c-2.us-east-1.aws.neon.tech";
+$db_port = "5432";
+$db_name = "veronica_db_login";
+$db_user = "neondb_owner";
+$db_pass = "npg_QolPDv5L9gVj";
+
 // --- Gestion du login ---
 $error_message = "";
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $servername = "localhost";
-    $dbname = "veronica_ai_login";
-    $username_db = "root";
-    $password_db = "";
-
     $username = htmlspecialchars(trim($_POST['username']));
     $password = htmlspecialchars(trim($_POST['password']));
 
     try {
-        $conn = new PDO("mysql:host=$servername;dbname=$dbname;charset=utf8", $username_db, $password_db);
-        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        // Connexion PostgreSQL (Neon)
+        $dsn = "pgsql:host=$db_host;port=$db_port;dbname=$db_name;sslmode=require";
+        $conn = new PDO($dsn, $db_user, $db_pass, [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
+        ]);
 
+        // Vérification utilisateur
         $stmt = $conn->prepare("SELECT password FROM users WHERE username = :username");
         $stmt->bindParam(':username', $username);
         $stmt->execute();
@@ -35,17 +41,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['username'] = $username;
             $_SESSION['is_logged_in'] = true;
 
-            $redirect_url = "http://localhost/assistente%20virtuale%20AI/description.php";
-            header("Location: " . filter_var($redirect_url, FILTER_SANITIZE_URL));
+            header("Location: description.php");
             exit();
         } else {
             $error_message = "❌ Login échoué. Vérifiez vos identifiants.";
         }
     } catch (PDOException $e) {
-        $error_message = "⚠️ Erreur de connexion à la base de données : " . htmlspecialchars($e->getMessage());
+        $error_message = "⚠️ Erreur de connexion à Neon : " . htmlspecialchars($e->getMessage());
     }
-
-    $conn = null;
 }
 ?>
 
