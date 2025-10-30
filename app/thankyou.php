@@ -6,9 +6,42 @@ session_start([
     'cookie_samesite' => 'Strict',
 ]);
 
-$username = $_SESSION['username'] ?? "Cher apprenant";
-?>
+// 🔹 Vérifie si l'utilisateur est connecté
+if (!isset($_SESSION['user_id'])) {
+    header("Location: index.php");
+    exit;
+}
 
+// --- Configuration de la base Neon ---
+$db_host = 'ep-autumn-salad-adwou7x2-pooler.c-2.us-east-1.aws.neon.tech';
+$db_port = '5432';
+$db_name = 'veronica_db_login';
+$db_user = 'neondb_owner';
+$db_pass = 'npg_QolPDv5L9gVj';
+
+try {
+    $conn = new PDO(
+        "pgsql:host=$db_host;port=$db_port;dbname=$db_name;sslmode=require",
+        $db_user,
+        $db_pass,
+        [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_EMULATE_PREPARES => false,
+        ]
+    );
+
+    // 🔹 Récupère le nom d'utilisateur depuis la base
+    $stmt = $conn->prepare("SELECT username FROM users WHERE id = :id LIMIT 1");
+    $stmt->execute([':id' => $_SESSION['user_id']]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    $username = $user['username'] ?? "Cher apprenant";
+} catch (PDOException $e) {
+    error_log("Erreur DB : " . $e->getMessage());
+    $username = "Cher apprenant";
+}
+
+?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -143,7 +176,7 @@ $username = $_SESSION['username'] ?? "Cher apprenant";
     </div>
 
     <script>
-        // Synthèse vocale
+        // 🔊 Synthèse vocale automatique
         window.onload = () => {
             const synth = window.speechSynthesis;
             const text = "Merci d’avoir complété ton profil linguistique. Je prépare ton parcours d’apprentissage personnalisé. À très bientôt !";
@@ -158,3 +191,5 @@ $username = $_SESSION['username'] ?? "Cher apprenant";
 </html>
 
 <?php ob_end_flush(); ?>
+
+
