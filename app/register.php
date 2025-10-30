@@ -61,6 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -69,14 +70,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <style>
         body {
             font-family: "Poppins", sans-serif;
-            background: linear-gradient(135deg, #7dd3fc, #a78bfa);
-            min-height: 100vh;
-            margin: 0;
+            background: url("drapeau.jpg") no-repeat center center fixed;
+            background-size: cover;
             display: flex;
             flex-direction: column;
+            min-height: 100vh;
             justify-content: center;
             align-items: center;
+            margin: 0;
+            overflow-x: hidden;
+            position: relative;
         }
+
+        /* Superposition pour lisibilité */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(4px);
+            z-index: 0;
+        }
+
+
 
         .navbar {
             background: rgba(255, 255, 255, 0.25);
@@ -173,8 +192,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(15px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         @media (max-width: 500px) {
@@ -228,6 +254,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </footer>
 </body>
+
 </html>
 
 <?php ob_end_flush(); ?>
+
