@@ -6,8 +6,8 @@ session_start([
     'cookie_samesite' => 'Strict',
 ]);
 
-// 🔹 Vérifie si l'utilisateur est connecté
-if (!isset($_SESSION['user_id'])) {
+// --- Vérification de la connexion utilisateur ---
+if (!isset($_SESSION['user_id']) && !isset($_SESSION['username'])) {
     header("Location: index.php");
     exit;
 }
@@ -18,6 +18,8 @@ $db_port = '5432';
 $db_name = 'veronica_db_login';
 $db_user = 'neondb_owner';
 $db_pass = 'npg_QolPDv5L9gVj';
+
+$username = $_SESSION['username'] ?? "Cher apprenant";
 
 try {
     $conn = new PDO(
@@ -30,17 +32,19 @@ try {
         ]
     );
 
-    // 🔹 Récupère le nom d'utilisateur depuis la base
-    $stmt = $conn->prepare("SELECT username FROM users WHERE id = :id LIMIT 1");
-    $stmt->execute([':id' => $_SESSION['user_id']]);
-    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    // --- Si on a un user_id, on récupère le nom depuis la base
+    if (isset($_SESSION['user_id'])) {
+        $stmt = $conn->prepare("SELECT username FROM users WHERE id = :id LIMIT 1");
+        $stmt->execute([':id' => $_SESSION['user_id']]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($user && !empty($user['username'])) {
+            $username = $user['username'];
+        }
+    }
 
-    $username = $user['username'] ?? "Cher apprenant";
 } catch (PDOException $e) {
-    error_log("Erreur DB : " . $e->getMessage());
-    $username = "Cher apprenant";
+    error_log("Erreur de connexion DB : " . $e->getMessage());
 }
-
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -106,13 +110,8 @@ try {
             animation: pulse 1.4s infinite ease-in-out;
         }
 
-        .dot:nth-child(2) {
-            animation-delay: 0.2s;
-        }
-
-        .dot:nth-child(3) {
-            animation-delay: 0.4s;
-        }
+        .dot:nth-child(2) { animation-delay: 0.2s; }
+        .dot:nth-child(3) { animation-delay: 0.4s; }
 
         @keyframes pulse {
             0%, 80%, 100% { transform: scale(0.8); opacity: 0.7; }
@@ -147,12 +146,8 @@ try {
         }
 
         @media (max-width: 500px) {
-            .thankyou-container {
-                padding: 25px;
-            }
-            h1 {
-                font-size: 1.6rem;
-            }
+            .thankyou-container { padding: 25px; }
+            h1 { font-size: 1.6rem; }
         }
     </style>
 </head>
@@ -191,5 +186,7 @@ try {
 </html>
 
 <?php ob_end_flush(); ?>
+
+
 
 
