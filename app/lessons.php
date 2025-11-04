@@ -407,3 +407,4 @@ $current_lessons = $lessons_by_level[$user_level] ?? $lessons_by_level['A1'];
 
 <?php ob_end_flush(); ?>
 
+
