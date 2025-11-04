@@ -30,7 +30,7 @@ try {
 
 // ====== VÉRIFICATION DE LA SESSION ======
 if (!isset($_SESSION['username'])) {
-    header('Location: login.php');
+    header('Location: index.php');
     exit();
 }
 
@@ -163,3 +163,4 @@ $totalMonthly = $totalWeekly * 4;
 </body>
 </html>
 <?php ob_end_flush(); ?>
+
