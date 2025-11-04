@@ -9,11 +9,7 @@ session_start([
     'cookie_samesite' => 'Lax',
 ]);
 
-// --- Vérifie que la session contient bien un identifiant utilisateur ---
-if (empty($_SESSION['user_id']) && empty($_SESSION['username'])) {
-    header("Location: index.php");
-    exit;
-}
+
 
 // --- Configuration de la base Neon ---
 $db_host = 'ep-autumn-salad-adwou7x2-pooler.c-2.us-east-1.aws.neon.tech';
@@ -173,6 +169,7 @@ try {
 </html>
 
 <?php ob_end_flush(); ?>
+
 
 
 
