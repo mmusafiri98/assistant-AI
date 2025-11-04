@@ -6,24 +6,22 @@ session_start([
     'cookie_samesite' => 'Strict',
 ]);
 
-if (!isset($_SESSION['username'])) {
-    header('Location: login.php');
-    exit();
-}
+
 $username = $_SESSION['username'];
 
-$host = "localhost";
-$dbname = "veronica_ai_login";
-$db_user = "root";
-$db_pass = "";
+// --- Configuration de la base Neon ---
+$db_host = 'ep-autumn-salad-adwou7x2-pooler.c-2.us-east-1.aws.neon.tech';
+$db_port = '5432';
+$db_name = 'veronica_db_login';
+$db_user = 'neondb_owner';
+$db_pass = 'npg_QolPDv5L9gVj';
 
 try {
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $db_user, $db_pass);
+   "pgsql:host=$db_host;port=$db_port;dbname=$db_name;sslmode=require"
+    $db_user,
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (Exception $e) {
-    http_response_code(500);
-    echo "Erreur de connexion à la base : " . $e->getMessage();
-    exit;
+} catch (PDOException $e) {
+    die("Erreur de connexion : " . $e->getMessage());
 }
 
 // Récupérer le niveau utilisateur
@@ -952,5 +950,6 @@ if (!$exercises) {
         });
     </script>
 </body>
+
 
 </html>
