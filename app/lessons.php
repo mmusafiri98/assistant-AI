@@ -108,7 +108,7 @@ $current_lessons = $lessons_by_level[$user_level] ?? $lessons_by_level['A1'];
         <a href="lessons.php" class="active">📖 Leçons</a>
         <a href="index.php">💬 Veronica Chat</a>
         <a href="profile.php">👤 Profil</a>
-        <a href="login.php" style="background: rgba(239,68,68,0.3);">🚪 Déconnexion</a>
+        <a href="index.php" style="background: rgba(239,68,68,0.3);">🚪 Déconnexion</a>
     </div>
 
     <div class="main">
@@ -144,6 +144,7 @@ $current_lessons = $lessons_by_level[$user_level] ?? $lessons_by_level['A1'];
 </html>
 
 <?php ob_end_flush(); ?>
+
 
 
 
