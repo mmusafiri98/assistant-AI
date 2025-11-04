@@ -28,11 +28,7 @@ try {
     die("❌ Erreur de connexion à la base Neon : " . htmlspecialchars($e->getMessage()));
 }
 
-// ====== VÉRIFICATION DE LA SESSION ======
-if (!isset($_SESSION['username'])) {
-    header('Location: index.php');
-    exit();
-}
+
 
 $username_session = $_SESSION['username'];
 
@@ -163,4 +159,5 @@ $totalMonthly = $totalWeekly * 4;
 </body>
 </html>
 <?php ob_end_flush(); ?>
+
 
