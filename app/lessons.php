@@ -6,18 +6,22 @@ session_start([
     'cookie_samesite' => 'Strict',
 ]);
 
-// ====== CONNEXION À LA BASE DE DONNÉES ======
-$host = 'localhost';
-$dbname = 'veronica_ai_login';
-$username_db = 'root';
-$password_db = '';
+// --- Configuration de la base Neon ---
+$db_host = 'ep-autumn-salad-adwou7x2-pooler.c-2.us-east-1.aws.neon.tech';
+$db_port = '5432';
+$db_name = 'veronica_db_login';
+$db_user = 'neondb_owner';
+$db_pass = 'npg_QolPDv5L9gVj';
 
-try {
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username_db, $password_db);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (PDOException $e) {
-    die("Erreur de connexion : " . $e->getMessage());
-}
+ $conn = new PDO(
+        "pgsql:host=$db_host;port=$db_port;dbname=$db_name;sslmode=require",
+        $db_user,
+        $db_pass,
+        [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_EMULATE_PREPARES => false,
+        ]
+    );
 
 // ====== VÉRIFICATION SESSION ======
 if (!isset($_SESSION['username'])) {
