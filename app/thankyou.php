@@ -1,13 +1,16 @@
 <?php
 ob_start();
+
+// --- Démarre la session de manière compatible avec localhost & HTTPS ---
+$secure = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
 session_start([
     'cookie_httponly' => true,
-    'cookie_secure' => isset($_SERVER['HTTPS']),
-    'cookie_samesite' => 'Strict',
+    'cookie_secure' => $secure,  // ⚠️ évite les erreurs en local
+    'cookie_samesite' => 'Lax',
 ]);
 
-// --- Vérification de la connexion utilisateur ---
-if (!isset($_SESSION['user_id']) && !isset($_SESSION['username'])) {
+// --- Vérifie que la session contient bien un identifiant utilisateur ---
+if (empty($_SESSION['user_id']) && empty($_SESSION['username'])) {
     header("Location: index.php");
     exit;
 }
@@ -19,6 +22,7 @@ $db_name = 'veronica_db_login';
 $db_user = 'neondb_owner';
 $db_pass = 'npg_QolPDv5L9gVj';
 
+// --- Valeur par défaut du nom ---
 $username = $_SESSION['username'] ?? "Cher apprenant";
 
 try {
@@ -32,18 +36,20 @@ try {
         ]
     );
 
-    // --- Si on a un user_id, on récupère le nom depuis la base
-    if (isset($_SESSION['user_id'])) {
+    // Si un user_id existe en session, on confirme le nom depuis la base
+    if (!empty($_SESSION['user_id'])) {
         $stmt = $conn->prepare("SELECT username FROM users WHERE id = :id LIMIT 1");
         $stmt->execute([':id' => $_SESSION['user_id']]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
         if ($user && !empty($user['username'])) {
             $username = $user['username'];
+            // 🔹 On synchronise la session au cas où
+            $_SESSION['username'] = $user['username'];
         }
     }
 
 } catch (PDOException $e) {
-    error_log("Erreur de connexion DB : " . $e->getMessage());
+    error_log("Erreur DB : " . $e->getMessage());
 }
 ?>
 <!DOCTYPE html>
@@ -62,7 +68,6 @@ try {
             justify-content: center;
             align-items: center;
             color: #1e293b;
-            overflow: hidden;
         }
 
         .thankyou-container {
@@ -89,12 +94,6 @@ try {
             margin-bottom: 25px;
         }
 
-        p {
-            color: #475569;
-            font-size: 1rem;
-            margin-bottom: 30px;
-        }
-
         .ai-loader {
             display: flex;
             justify-content: center;
@@ -118,11 +117,6 @@ try {
             40% { transform: scale(1.2); opacity: 1; }
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(15px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
         .button {
             background-color: #4f46e5;
             color: white;
@@ -144,26 +138,20 @@ try {
             font-size: 0.9rem;
             color: #334155;
         }
-
-        @media (max-width: 500px) {
-            .thankyou-container { padding: 25px; }
-            h1 { font-size: 1.6rem; }
-        }
     </style>
 </head>
 <body>
     <div class="thankyou-container">
         <h1>Merci, <?= htmlspecialchars($username) ?> 🎉</h1>
         <h2>Ton profil linguistique a bien été enregistré.</h2>
-        
+
         <div class="ai-loader">
             <div class="dot"></div>
             <div class="dot"></div>
             <div class="dot"></div>
         </div>
 
-        <p>Veronica AI analyse maintenant tes réponses afin de créer un parcours d’apprentissage personnalisé 💡<br>
-        Tu recevras bientôt tes premières leçons adaptées à ton niveau et à tes objectifs.</p>
+        <p>Veronica AI analyse maintenant tes réponses pour créer un parcours d’apprentissage personnalisé 💡</p>
 
         <a href="dashboard.php" class="button">👉 Accéder à mon espace d’apprentissage</a>
 
@@ -171,7 +159,6 @@ try {
     </div>
 
     <script>
-        // 🔊 Synthèse vocale automatique
         window.onload = () => {
             const synth = window.speechSynthesis;
             const text = "Merci d’avoir complété ton profil linguistique. Je prépare ton parcours d’apprentissage personnalisé. À très bientôt !";
@@ -186,6 +173,8 @@ try {
 </html>
 
 <?php ob_end_flush(); ?>
+
+
 
 
 
