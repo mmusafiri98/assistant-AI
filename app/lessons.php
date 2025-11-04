@@ -23,11 +23,7 @@ $db_pass = 'npg_QolPDv5L9gVj';
         ]
     );
 
-// ====== VÉRIFICATION SESSION ======
-if (!isset($_SESSION['username'])) {
-    header('Location: login.php');
-    exit();
-}
+
 
 $username_session = $_SESSION['username'];
 
@@ -410,3 +406,4 @@ $current_lessons = $lessons_by_level[$user_level] ?? $lessons_by_level['A1'];
 </html>
 
 <?php ob_end_flush(); ?>
+
