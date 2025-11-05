@@ -13,7 +13,7 @@ $db_name = 'veronica_db_login';
 $db_user = 'neondb_owner';
 $db_pass = 'npg_QolPDv5L9gVj';
 
-// ====== CONNEXION À LA BASE DE DONNÉES ======
+// ====== CONNEXION À LA BASE ======
 try {
     $pdo = new PDO(
         "pgsql:host=$db_host;port=$db_port;dbname=$db_name;sslmode=require",
@@ -25,14 +25,19 @@ try {
         ]
     );
 } catch (PDOException $e) {
-    die("❌ Erreur de connexion à la base Neon : " . htmlspecialchars($e->getMessage()));
+    die("<h3 style='color:red;'>❌ Erreur de connexion à la base Neon :</h3> " . htmlspecialchars($e->getMessage()));
 }
 
+// ====== RÉCUPÉRATION DE L'UTILISATEUR CONNECTÉ ======
+if (!isset($_SESSION['username']) || empty($_SESSION['username'])) {
+    echo "<p style='color:red;font-weight:bold;'>⚠️ Aucun utilisateur connecté. Redirection vers la page de connexion...</p>";
+    header("refresh:2;url=login.php");
+    exit;
+}
 
+$username_session = trim($_SESSION['username']);
 
-$username_session = $_SESSION['username'];
-
-// ====== RÉCUPÉRATION DES DONNÉES DEPUIS user_quiz ======
+// ====== RÉCUPÉRATION DES DONNÉES UTILISATEUR ======
 try {
     $stmt = $pdo->prepare("
         SELECT username, level, goal, skills, accent, days, minutes 
@@ -53,21 +58,24 @@ try {
         $days = intval($user['days']);
         $minutes = intval($user['minutes']);
     } else {
-        $username = "Cher apprenant";
+        // Aucun enregistrement trouvé pour cet utilisateur
+        $username = htmlspecialchars($username_session);
         $level = "Non défini";
         $goal = "Non défini";
         $skills = "Aucune compétence sélectionnée";
         $accent = "Non défini";
         $days = 0;
         $minutes = 0;
+        echo "<p style='color:orange;'>⚠️ Aucune donnée trouvée pour l'utilisateur <b>$username_session</b> dans la table <b>user_quiz</b>.</p>";
     }
 } catch (PDOException $e) {
-    error_log("Erreur de récupération des données : " . $e->getMessage());
-    $username = "Cher apprenant";
-    $level = $goal = $skills = $accent = "Non défini";
+    error_log("Erreur SQL : " . $e->getMessage());
+    $username = "Erreur utilisateur";
+    $level = $goal = $skills = $accent = "Erreur de lecture";
     $days = $minutes = 0;
 }
 
+// ====== CALCULS D'HEURES DE PRATIQUE ======
 $totalWeekly = $days * $minutes;
 $totalMonthly = $totalWeekly * 4;
 ?>
@@ -77,7 +85,6 @@ $totalMonthly = $totalWeekly * 4;
     <meta charset="UTF-8">
     <title>Tableau de bord – Veronica AI</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * {margin: 0; padding: 0; box-sizing: border-box;}
         body {
@@ -120,9 +127,9 @@ $totalMonthly = $totalWeekly * 4;
         <h1>🎓 Veronica AI</h1>
         <a href="#" class="active">🏠 Accueil</a>
         <a href="lessons.php">📖 Leçons</a>
-        <a href="index.html">🗣️ Conversations</a>
+        <a href="index.php">🗣️ Conversations</a>
         <a href="#">🏆 Classement</a>
-        <a href="#">👤 Profil</a>
+        <a href="profile.php">👤 Profil</a>
         <a href="logout.php" style="margin-top: 20px; background: rgba(239,68,68,0.2);">🚪 Déconnexion</a>
     </div>
 
@@ -152,12 +159,13 @@ $totalMonthly = $totalWeekly * 4;
             <div class="card">
                 <h3>Prochaines leçons</h3>
                 <p>Révise tes chapitres précédents pour progresser rapidement.</p>
-                <a href="#" class="button">🚀 Commencer la révision</a>
+                <a href="lessons.php" class="button">🚀 Commencer la révision</a>
             </div>
         </div>
     </div>
 </body>
 </html>
 <?php ob_end_flush(); ?>
+
 
 
