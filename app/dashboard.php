@@ -126,7 +126,7 @@ $totalMonthly = $totalWeekly * 4;
     <div class="sidebar">
         <h1>🎓 Veronica AI</h1>
         <a href="#" class="active">🏠 Accueil</a>
-        <a href="lessons.php">📖 Leçons</a>
+        <a href="lessons.php">📖 commence les revisions</a>
         <a href="conversation.php">🗣️ Conversations</a>
         <a href="#">🏆 Classement</a>
         <a href="profile.php">👤 Profil</a>
@@ -166,6 +166,7 @@ $totalMonthly = $totalWeekly * 4;
 </body>
 </html>
 <?php ob_end_flush(); ?>
+
 
 
 
