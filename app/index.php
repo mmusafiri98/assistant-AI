@@ -44,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['is_logged_in'] = true;
 
             // ✅ Redirection immédiate vers dashboard.php
-            header("Location: dashboard.php");
+            header("Location: choix.php");
             exit();
         } else {
             $error_message = "❌ Identifiants incorrects. Vérifiez votre nom d'utilisateur ou mot de passe.";
