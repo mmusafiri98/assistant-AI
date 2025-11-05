@@ -126,7 +126,6 @@ $totalMonthly = $totalWeekly * 4;
     <div class="sidebar">
         <h1>🎓 Veronica AI</h1>
         <a href="#" class="active">🏠 Accueil</a>
-        <a href="lessons.php">📖 commence les revisions</a>
         <a href="conversation.php">🗣️ Conversations</a>
         <a href="#">🏆 Classement</a>
         <a href="profile.php">👤 Profil</a>
@@ -157,8 +156,8 @@ $totalMonthly = $totalWeekly * 4;
             </div>
 
             <div class="card">
-                <h3>Prochaines leçons</h3>
-                <p>Révise tes chapitres précédents pour progresser rapidement.</p>
+         
+                <p>Révise les concept de grammaire en francais.</p>
                 <a href="lessons.php" class="button">🚀 Commencer la révision</a>
             </div>
         </div>
@@ -166,6 +165,7 @@ $totalMonthly = $totalWeekly * 4;
 </body>
 </html>
 <?php ob_end_flush(); ?>
+
 
 
 
