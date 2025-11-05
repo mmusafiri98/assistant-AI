@@ -31,7 +31,7 @@ try {
 // ====== RÉCUPÉRATION DE L'UTILISATEUR CONNECTÉ ======
 if (!isset($_SESSION['username']) || empty($_SESSION['username'])) {
     echo "<p style='color:red;font-weight:bold;'>⚠️ Aucun utilisateur connecté. Redirection vers la page de connexion...</p>";
-    header("refresh:2;url=login.php");
+    header("refresh:2;url=index.php");
     exit;
 }
 
@@ -166,6 +166,7 @@ $totalMonthly = $totalWeekly * 4;
 </body>
 </html>
 <?php ob_end_flush(); ?>
+
 
 
 
