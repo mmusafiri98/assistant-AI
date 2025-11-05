@@ -127,10 +127,10 @@ $totalMonthly = $totalWeekly * 4;
         <h1>🎓 Veronica AI</h1>
         <a href="#" class="active">🏠 Accueil</a>
         <a href="lessons.php">📖 Leçons</a>
-        <a href="index.php">🗣️ Conversations</a>
+        <a href="conversation.php">🗣️ Conversations</a>
         <a href="#">🏆 Classement</a>
         <a href="profile.php">👤 Profil</a>
-        <a href="logout.php" style="margin-top: 20px; background: rgba(239,68,68,0.2);">🚪 Déconnexion</a>
+        <a href="index.php" style="margin-top: 20px; background: rgba(239,68,68,0.2);">🚪 Déconnexion</a>
     </div>
 
     <div class="main">
@@ -166,6 +166,7 @@ $totalMonthly = $totalWeekly * 4;
 </body>
 </html>
 <?php ob_end_flush(); ?>
+
 
 
 
