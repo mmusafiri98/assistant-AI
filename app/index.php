@@ -1,24 +1,27 @@
 <?php
-ob_start();
-session_start([
-    'cookie_httponly' => true,
-    'cookie_secure' => isset($_SERVER['HTTPS']),
-    'cookie_samesite' => 'Strict',
+// ======== SÉCURITÉ ET SESSIONS =========
+session_set_cookie_params([
+    'path' => '/', // ✅ permet d’accéder à la session sur toutes les pages
+    'httponly' => true,
+    'secure' => isset($_SERVER['HTTPS']),
+    'samesite' => 'Lax' // ✅ compatible avec redirection après login
 ]);
+session_start();
 
+// ======== RÉGÉNÉRATION DE SESSION =========
 if (!isset($_SESSION['initiated'])) {
-    session_regenerate_id();
+    session_regenerate_id(true);
     $_SESSION['initiated'] = true;
 }
 
-// --- Configuration Neon PostgreSQL ---
+// ======== CONFIGURATION BASE DE DONNÉES (NEON) =========
 $db_host = "ep-autumn-salad-adwou7x2-pooler.c-2.us-east-1.aws.neon.tech";
 $db_port = "5432";
 $db_name = "veronica_db_login";
 $db_user = "neondb_owner";
 $db_pass = "npg_QolPDv5L9gVj";
 
-// --- Gestion du login ---
+// ======== LOGIN UTILISATEUR =========
 $error_message = "";
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -31,7 +34,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
         ]);
 
-        // Vérification utilisateur
         $stmt = $conn->prepare("SELECT password FROM users WHERE username = :username");
         $stmt->bindParam(':username', $username);
         $stmt->execute();
@@ -40,17 +42,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($result && password_verify($password, $result['password'])) {
             $_SESSION['username'] = $username;
             $_SESSION['is_logged_in'] = true;
-            header("Location: description.php");
+
+            // ✅ Redirection immédiate vers dashboard.php
+            header("Location: dashboard.php");
             exit();
         } else {
-            $error_message = "❌ Login échoué. Vérifiez vos identifiants.";
+            $error_message = "❌ Identifiants incorrects. Vérifiez votre nom d'utilisateur ou mot de passe.";
         }
     } catch (PDOException $e) {
-        $error_message = "⚠️ Erreur de connexion à Neon : " . htmlspecialchars($e->getMessage());
+        $error_message = "⚠️ Erreur de connexion à la base Neon : " . htmlspecialchars($e->getMessage());
     }
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -69,11 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             justify-content: center;
             align-items: center;
             margin: 0;
-            overflow-x: hidden;
-            position: relative;
         }
-
-        /* Superposition pour lisibilité */
         body::before {
             content: "";
             position: fixed;
@@ -85,7 +84,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             backdrop-filter: blur(4px);
             z-index: 0;
         }
-
         .navbar {
             background: rgba(255, 255, 255, 0.25);
             backdrop-filter: blur(10px);
@@ -98,11 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             justify-content: center;
             z-index: 1000;
         }
-
-        .navbar img {
-            height: 70px;
-        }
-
+        .navbar img { height: 70px; }
         .login-card {
             position: relative;
             z-index: 1;
@@ -115,23 +109,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             width: 360px;
             animation: fadeIn 0.8s ease-in-out;
         }
-
-        .login-card h2 {
-            font-weight: 600;
-            color: #1e293b;
-        }
-
-        .login-card p {
-            color: #475569;
-            font-size: 0.95rem;
-        }
-
-        .form-control {
-            border-radius: 10px;
-            margin-bottom: 15px;
-            border: 1px solid #dbeafe;
-        }
-
+        .login-card h2 { font-weight: 600; color: #1e293b; }
+        .form-control { border-radius: 10px; margin-bottom: 15px; border: 1px solid #dbeafe; }
         .btn-login {
             background-color: #4f46e5;
             border: none;
@@ -142,57 +121,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             font-size: 1.1rem;
             transition: all 0.3s ease;
         }
-
-        .btn-login:hover {
-            background-color: #4338ca;
-            transform: translateY(-2px);
-        }
-
-        .error-message {
-            color: #dc2626;
-            font-weight: 600;
-            margin-bottom: 10px;
-        }
-
-        footer {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background: rgba(255, 255, 255, 0.3);
-            backdrop-filter: blur(5px);
-            text-align: center;
-            padding: 10px;
-            font-size: 0.9rem;
-            color: #334155;
-            z-index: 1;
-        }
-
-        .social-icons img {
-            width: 35px;
-            margin: 0 8px;
-            transition: transform 0.3s ease;
-        }
-
-        .social-icons img:hover {
-            transform: scale(1.2);
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(15px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        @media (max-width: 500px) {
-            .login-card {
-                width: 90%;
-                padding: 30px;
-            }
-
-            .navbar img {
-                height: 60px;
-            }
-        }
+        .btn-login:hover { background-color: #4338ca; transform: translateY(-2px); }
+        .error-message { color: #dc2626; font-weight: 600; margin-bottom: 10px; }
+        @keyframes fadeIn { from {opacity: 0; transform: translateY(15px);} to {opacity: 1; transform: translateY(0);} }
     </style>
 </head>
 <body>
@@ -218,16 +149,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <a href="register.php" style="color:#4f46e5; font-weight:500;">Inscris-toi ici</a>.
         </p>
     </div>
-
-    <footer>
-        <p>Suivez <strong>Veronica AI</strong> sur les réseaux sociaux</p>
-        <div class="social-icons">
-            <img src="Logo Facebook.svg" alt="Facebook">
-            <img src="Logo instagram.svg" alt="Instagram">
-        </div>
-    </footer>
 </body>
 </html>
 
-<?php ob_end_flush(); ?>
 
