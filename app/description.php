@@ -8,7 +8,7 @@ session_start([
 
 // ====== VÉRIFICATION DE LA SESSION ======
 if (!isset($_SESSION['username'])) {
-    header('Location: login.php');
+    header('Location: index.php');
     exit();
 }
 
@@ -158,4 +158,5 @@ try {
 </html>
 
 <?php ob_end_flush(); ?>
+
 
