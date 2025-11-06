@@ -88,7 +88,7 @@ try {
 </head>
 
 <body>
-    <a href="logout.php" class="logout-btn">🚪 Déconnexion</a>
+    <a href="index.php" class="logout-btn">🚪 Déconnexion</a>
 
     <div class="header">
         <h1>🌍 Choix de langue</h1>
@@ -158,3 +158,4 @@ try {
 </html>
 
 <?php ob_end_flush(); ?>
+
