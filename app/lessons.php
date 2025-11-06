@@ -120,18 +120,17 @@ $current_lessons = $lessons_by_level[$user_level] ?? $lessons_by_level['A1'];
     <div class="sidebar">
         <h1>🎓 Veronica AI</h1>
         <a href="dashboard.php">🏠 Accueil</a>
-        <a href="lessons.php" class="active">📖 Leçons</a>
+        <a href="lessons.php" class="active">📖 revisions de la grammairee</a>
         <a href="index.php">✍️ Conversations</a>
         <a href="ranking.php">🏆 Classement</a>
         <a href="profile.php">👤 Profil</a>
-        <a href="settings.php">⚙️ Paramètres</a>
-        <a href="login.php" style="margin-top: 20px; background: rgba(239,68,68,0.2);">🚪 Déconnexion</a>
+        <a href="index.php" style="margin-top: 20px; background: rgba(239,68,68,0.2);">🚪 Déconnexion</a>
     </div>
 
     <div class="main">
         <div class="header">
-            <h2>📚 Mes leçons personnalisées</h2>
-            <p>Bonjour <?= htmlspecialchars($username ?? '') ?> ! Voici les leçons adaptées à ton niveau</p>
+            <h2>📚 Mes exercices personnalisées</h2>
+            <p>Bonjour <?= htmlspecialchars($username ?? '') ?> ! Voici les exercices  adaptées à ton niveau</p>
             <span class="level-badge">Niveau actuel : <?= htmlspecialchars($user_level ?? 'A1') ?></span>
         </div>
 
@@ -148,7 +147,7 @@ $current_lessons = $lessons_by_level[$user_level] ?? $lessons_by_level['A1'];
                                 <div class="lesson-title"><?= htmlspecialchars($lesson['title']) ?></div>
                                 <div class="lesson-duration"><?= htmlspecialchars($lesson['duration']) ?></div>
                                 <button class="start-btn" onclick="startLesson('<?= $lesson['theme'] ?>','<?= $category ?>','<?= $user_level ?>')">
-                                    Commencer la leçon
+                                    Commencer les exercices 
                                 </button>
                             </div>
                         <?php endforeach; ?>
@@ -167,6 +166,7 @@ $current_lessons = $lessons_by_level[$user_level] ?? $lessons_by_level['A1'];
 </html>
 
 <?php ob_end_flush(); ?>
+
 
 
 
