@@ -87,7 +87,7 @@ $current_lessons = $lessons_by_level[$user_level] ?? $lessons_by_level['A1'];
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Leçons - Niveau <?= htmlspecialchars($user_level) ?> - Veronica AI</title>
+    <title>Exercices des revisions en Francais <?= htmlspecialchars($user_level) ?> - Veronica AI</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -166,6 +166,7 @@ $current_lessons = $lessons_by_level[$user_level] ?? $lessons_by_level['A1'];
 </html>
 
 <?php ob_end_flush(); ?>
+
 
 
 
