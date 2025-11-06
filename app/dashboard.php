@@ -121,15 +121,15 @@ $totalMonthly = $totalWeekly * 4;
                 <p><strong>Total/mois :</strong> <?= $totalMonthly ?> min</p>
             </div>
 
-            <div class="card">
-                <p>Révise les concepts de grammaire française.</p>
-                <a href="lessons.php" class="button">🚀 Commencer la révision</a>
+            <div class="card">            
+                <a href="lessons.php" class="button">🚀 Commencer la révision des grammaires</a>
             </div>
         </div>
     </div>
 </body>
 </html>
 <?php ob_end_flush(); ?>
+
 
 
 
