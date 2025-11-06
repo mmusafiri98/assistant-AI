@@ -127,10 +127,11 @@ button{padding:12px 20px;border:none;background:#4f46e5;color:white;border-radiu
                 <input type="text" name="answers[<?= $i ?>]" placeholder="Ta réponse...">
             </div>
         <?php endforeach; ?>
-        <button type="submit">✅ Soumettre</button>
+        <button type="submit">✅ Soumettre les exercices </button>
     </form>
 </div>
 </body>
 </html>
+
 
 
