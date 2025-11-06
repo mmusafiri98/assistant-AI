@@ -235,7 +235,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <button type="submit" class="btn-register">S'inscrire</button>
         </form>
 
-        <p class="mt-3">Déjà un compte ? <a href="login.php" style="color:#4f46e5; font-weight:500;">Connecte-toi ici</a>.</p>
+        <p class="mt-3">Déjà un compte ? <a href="index.php" style="color:#4f46e5; font-weight:500;">Connecte-toi ici</a>.</p>
     </div>
 
     <footer>
@@ -249,6 +249,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </html>
 
 <?php ob_end_flush(); ?>
+
 
 
 
