@@ -10,7 +10,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 // --- Vérification utilisateur connecté ---
 if (empty($_SESSION['username'])) {
-    header("Location: index.php");
+    header("Location: dashboard.php");
     exit;
 }
 
