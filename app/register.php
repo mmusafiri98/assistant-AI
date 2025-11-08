@@ -49,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->bindParam(':password', $hashed_password);
 
                 if ($stmt->execute()) {
-                    $success_message = "✅ Inscription réussie ! Tu peux maintenant <a href='login.php' style='color:#4f46e5;'>te connecter</a>.";
+                    $success_message = "✅ Inscription réussie ! Tu peux maintenant <a href='index.php' style='color:#4f46e5;'>te connecter</a>.";
                 } else {
                     $error_message = "❌ Une erreur s'est produite lors de l'inscription.";
                 }
@@ -249,6 +249,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </html>
 
 <?php ob_end_flush(); ?>
+
 
 
 
