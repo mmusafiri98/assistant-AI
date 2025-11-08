@@ -8,7 +8,7 @@ session_start([
 
 // ====== Vérification de la session ======
 if (empty($_SESSION['username'])) {
-    header("Location: index.php");
+    header("Location: dashboard.php");
     exit;
 }
 
@@ -129,6 +129,7 @@ $totalMonthly = $totalWeekly * 4;
 </body>
 </html>
 <?php ob_end_flush(); ?>
+
 
 
 
