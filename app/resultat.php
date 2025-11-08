@@ -1,12 +1,14 @@
 <?php
-// --- Démarrage sécurisé et cohérent de la session ---
-session_start([
-    'cookie_httponly' => true,
-    'cookie_secure' => isset($_SERVER['HTTPS']), // vrai si HTTPS
-    'cookie_samesite' => 'Lax', // évite la perte de cookie lors du retour depuis une autre page
-]);
+// --- Démarrage sécurisé de la session ---
+if (session_status() === PHP_SESSION_NONE) {
+    session_start([
+        'cookie_httponly' => true,
+        'cookie_secure'   => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+        'cookie_samesite' => 'Lax', // important pour garder la session après redirection
+    ]);
+}
 
-// --- Vérification que l'utilisateur est connecté ---
+// --- Vérification utilisateur connecté ---
 if (empty($_SESSION['username'])) {
     header("Location: index.php");
     exit;
@@ -14,16 +16,16 @@ if (empty($_SESSION['username'])) {
 
 define('COHERE_API_KEY', 'Uw540GN865rNyiOs3VMnWhRaYQ97KAfudAHAnXzJ');
 
-// --- Récupération du thème et des données de session ---
-$theme = $_GET['theme'] ?? 'articles';
+// --- Récupération du thème actuel ---
+$theme = $_SESSION['current_theme'] ?? 'articles';
 $exercises = $_SESSION['exercises'][$theme] ?? [];
 $userAnswers = $_SESSION['user_answers'] ?? [];
 
-if (!$exercises) {
-    die("<h3 style='color:red;'>❌ Aucun exercice trouvé pour le thème sélectionné.</h3>");
+if (empty($exercises)) {
+    die("<h3 style='color:red;'>❌ Aucun exercice trouvé dans la session. Retourne sur la page des leçons.</h3>");
 }
 
-// --- Calcul du score ---
+// --- Calcul du score et collecte des erreurs ---
 $results = [];
 $score = 0;
 $mistakes = [];
@@ -32,7 +34,7 @@ foreach ($exercises as $i => $ex) {
     $user = trim($userAnswers[$i] ?? '');
     $correct = trim($ex['answer']);
 
-    if (strcasecmp($user, $correct) == 0) {
+    if (strcasecmp($user, $correct) === 0) {
         $results[] = [
             'q' => $ex['question'],
             'user' => $user,
@@ -54,13 +56,13 @@ foreach ($exercises as $i => $ex) {
     }
 }
 
-// --- Appel API Cohere pour explications (si erreurs) ---
+// --- Appel API Cohere pour explication des erreurs ---
 $explanationText = "Aucune erreur détectée. Excellent travail !";
-if ($mistakes) {
-    $prompt = "Tu es Veronica AI, professeur de français. Explique calmement et naturellement les erreurs de l'élève.
-Voici les erreurs :
+if (!empty($mistakes)) {
+    $prompt = "Tu es Veronica AI, un professeur de français bienveillant. Explique à l’élève pourquoi ses réponses sont incorrectes, de façon claire et simple.
+Voici les erreurs commises :
 " . json_encode($mistakes, JSON_UNESCAPED_UNICODE) . "
-Pour chaque erreur, explique en 2-3 phrases pourquoi la réponse est fausse et quelle est la bonne réponse.";
+Pour chaque erreur, explique en 2 à 3 phrases pourquoi la réponse est fausse et donne la bonne réponse.";
 
     $payload = [
         "model" => "command-a-vision-07-2025",
@@ -85,14 +87,15 @@ Pour chaque erreur, explique en 2-3 phrases pourquoi la réponse est fausse et q
     curl_close($ch);
 
     $result = json_decode($resp, true);
-    $explanationText = $result['text'] ?? "L’IA n’a pas pu expliquer les erreurs pour le moment.";
+    $explanationText = $result['text'] ?? "⚠️ L’IA n’a pas pu générer les explications pour le moment.";
 }
 
-// --- Validation ---
-$validation = ($score >= 20)
-    ? "🎉 Bravo ! Tu as validé cet exercice."
-    : "⚠️ Tu dois encore t’entraîner.";
+// --- Message de validation ---
+$validation = ($score >= count($exercises) * 0.8)
+    ? "🎉 Bravo ! Tu as validé ce thème avec succès."
+    : "⚠️ Tu dois encore t’entraîner un peu.";
 
+// --- Récupération du nom d’utilisateur ---
 $username = htmlspecialchars($_SESSION['username']);
 ?>
 <!doctype html>
@@ -102,7 +105,7 @@ $username = htmlspecialchars($_SESSION['username']);
 <title>Résultats — Veronica AI</title>
 <style>
 body {
-    font-family: sans-serif;
+    font-family: "Poppins", sans-serif;
     background: #f4f4f4;
     padding: 30px;
 }
@@ -112,13 +115,13 @@ body {
     background: white;
     padding: 30px;
     border-radius: 10px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
-.correct { color: green; }
-.wrong { color: red; }
+.correct { color: #16a34a; }
+.wrong { color: #dc2626; }
 .result {
     margin-top: 10px;
-    padding: 10px;
+    padding: 15px;
     background: #f9fafb;
     border-radius: 8px;
 }
@@ -130,16 +133,19 @@ a.button {
     padding: 10px 20px;
     border-radius: 8px;
     text-decoration: none;
+    font-weight: 600;
 }
 a.button:hover {
     opacity: 0.9;
 }
+h1, h2, h3 { color: #1e293b; }
 </style>
 </head>
 <body>
 <div class="container">
-    <h1>Résultats de ton test, <?= $username ?> 👋</h1>
-    <h2>Score : <?= $score ?>/39</h2>
+    <h1>Résultats du thème <em><?= htmlspecialchars($theme) ?></em></h1>
+    <h2>👋 Bonjour <?= $username ?></h2>
+    <p><strong>Score :</strong> <?= $score ?>/<?= count($exercises) ?></p>
     <p><?= $validation ?></p>
 
     <h3>🟢 Réponses correctes :</h3>
