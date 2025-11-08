@@ -5,12 +5,17 @@ session_start([
     'cookie_secure' => isset($_SERVER['HTTPS']),
     'cookie_samesite' => 'Lax', // ✅ Lax évite la perte de cookie après redirection
 ]);
-
 // ====== Vérification de la session ======
 if (empty($_SESSION['username'])) {
+    // Si l'utilisateur n'est pas connecté, on le redirige vers la page de connexion
+    header("Location: index.php");
+    exit;
+} else {
+    // Sinon, il peut accéder au tableau de bord
     header("Location: dashboard.php");
     exit;
 }
+
 
 $username_session = $_SESSION['username'];
 
@@ -129,6 +134,7 @@ $totalMonthly = $totalWeekly * 4;
 </body>
 </html>
 <?php ob_end_flush(); ?>
+
 
 
 
