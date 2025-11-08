@@ -8,11 +8,18 @@ if (session_status() === PHP_SESSION_NONE) {
     ]);
 }
 
-// --- Vérification utilisateur connecté ---
+ì
+// ====== Vérification de la session ======
 if (empty($_SESSION['username'])) {
+    // Si l'utilisateur n'est pas connecté, on le redirige vers la page de connexion
+    header("Location: index.php");
+    exit;
+} else {
+    // Sinon, il peut accéder au tableau de bord
     header("Location: dashboard.php");
     exit;
 }
+
 
 define('COHERE_API_KEY', 'Uw540GN865rNyiOs3VMnWhRaYQ97KAfudAHAnXzJ');
 
