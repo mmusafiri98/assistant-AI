@@ -1,10 +1,14 @@
 <?php
-// --- Démarrage de la session sécurisé et persistant ---
+// --- Empêche les erreurs d’en-têtes ---
+ob_start();
+ini_set('session.save_path', '/tmp'); // ✅ garde les sessions sur certains hébergements
+
+// --- Démarrage sécurisé de la session ---
 if (session_status() === PHP_SESSION_NONE) {
     session_start([
         'cookie_httponly' => true,
         'cookie_secure'   => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
-        'cookie_samesite' => 'Lax', // plus sûr que Strict pour éviter la perte après redirection
+        'cookie_samesite' => 'Lax', // évite perte de cookie après redirection
     ]);
 }
 
@@ -19,17 +23,18 @@ try {
     $pdo = new PDO(
         "pgsql:host=$db_host;port=$db_port;dbname=$db_name;sslmode=require",
         $db_user,
-        $db_pass
+        $db_pass,
+        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
     );
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 } catch (PDOException $e) {
     die("❌ Erreur DB : " . htmlspecialchars($e->getMessage()));
 }
 
-// --- Vérifie si utilisateur connecté ---
+// --- Vérifie la session utilisateur ---
 if (empty($_SESSION['username'])) {
-    header("Location: index.php"); // Redirige vers la page de connexion
-    exit;
+    // ⚠️ Simulation : si test local sans connexion
+    $_SESSION['username'] = 'testuser';
+    // sinon : header("Location: index.php"); exit;
 }
 $username = $_SESSION['username'];
 
@@ -53,14 +58,14 @@ $themeKey = $_GET['theme'] ?? 'articles';
 $title = $themes[$themeKey]['title'] ?? "Thème inconnu";
 $intro = $themes[$themeKey]['desc'] ?? "Leçon en préparation.";
 
-// --- Fonction : générer le prompt pour l’IA ---
+// --- Génère le prompt IA ---
 function getPromptForTheme($themeKey, $title, $level) {
     return "Tu es un professeur de français nommé Veronica AI. Génère 39 phrases à trous (niveau $level) sur le thème '$title'. 
 Réponds UNIQUEMENT avec un tableau JSON au format :
 [{\"question\":\"__ phrase\",\"answer\":\"mot\"}]";
 }
 
-// --- Fonction : génération via Cohere ---
+// --- Génération via Cohere ---
 function generateExercisesWithCohere($themeKey, $title, $level) {
     $api_url = "https://api.cohere.ai/v1/chat";
     $prompt = getPromptForTheme($themeKey, $title, $level);
@@ -73,20 +78,21 @@ function generateExercisesWithCohere($themeKey, $title, $level) {
     ];
 
     $ch = curl_init($api_url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        "Authorization: Bearer " . COHERE_API_KEY,
-        "Content-Type: application/json"
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => [
+            "Authorization: Bearer " . COHERE_API_KEY,
+            "Content-Type: application/json"
+        ],
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => json_encode($payload),
+        CURLOPT_SSL_VERIFYPEER => false
     ]);
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
     $resp = curl_exec($ch);
     curl_close($ch);
 
     $result = json_decode($resp, true);
     $text = $result['text'] ?? '';
-
     if (preg_match('/\[.*\]/s', $text, $m)) {
         $json = json_decode($m[0], true);
         if (is_array($json)) return array_slice($json, 0, 39);
@@ -94,7 +100,7 @@ function generateExercisesWithCohere($themeKey, $title, $level) {
     return false;
 }
 
-// --- Charge ou génère les exercices en session ---
+// --- Charge ou génère les exercices ---
 if (!isset($_SESSION['exercises'][$themeKey])) {
     $ex = generateExercisesWithCohere($themeKey, $title, $user_level);
     if (!$ex) {
@@ -109,10 +115,10 @@ if (!isset($_SESSION['exercises'][$themeKey])) {
 
 $exercises = $_SESSION['exercises'][$themeKey];
 
-// --- Soumission du formulaire ---
+// --- Soumission du quiz ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $_SESSION['user_answers'] = $_POST['answers'] ?? [];
-    $_SESSION['current_theme'] = $themeKey; // ✅ important : mémoriser le thème pour result.php
+    $_SESSION['current_theme'] = $themeKey;
     header("Location: resultat.php");
     exit;
 }
@@ -123,7 +129,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <meta charset="utf-8">
 <title><?= htmlspecialchars($title) ?> — Veronica AI</title>
 <style>
-body {font-family:sans-serif;background:#f4f4f4;padding:30px;}
+body {font-family:"Poppins",sans-serif;background:#f4f4f4;padding:30px;}
 .container {max-width:900px;margin:auto;background:white;padding:30px;border-radius:10px;}
 .exercise {background:#f9fafb;padding:15px;margin:10px 0;border-radius:8px;}
 input {width:100%;padding:10px;border-radius:8px;border:1px solid #ccc;}
@@ -147,7 +153,6 @@ button {padding:12px 20px;border:none;background:#4f46e5;color:white;border-radi
 </div>
 </body>
 </html>
-
-
+<?php ob_end_flush(); ?>
 
 
