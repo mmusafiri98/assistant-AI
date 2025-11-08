@@ -1,182 +1,200 @@
-<?php
-// --- Démarrage sécurisé de la session ---
+ <?php
+// resultat.php - page de résultats et explications IA
+ob_start();
+
+// Session start (sécurisé)
 if (session_status() === PHP_SESSION_NONE) {
     session_start([
         'cookie_httponly' => true,
         'cookie_secure'   => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
-        'cookie_samesite' => 'Lax', // important pour garder la session après redirection
+        'cookie_samesite' => 'Lax',
     ]);
 }
 
-ì
-// ====== Vérification de la session ======
+// Si l'utilisateur n'est pas connecté -> rediriger vers la page de connexion
 if (empty($_SESSION['username'])) {
-    // Si l'utilisateur n'est pas connecté, on le redirige vers la page de connexion
-    header("Location: index.php");
+    header('Location: index.php');
     exit;
+}
 
-
-
+// Paramètres API Cohere (remplace par ta clé si nécessaire)
 define('COHERE_API_KEY', 'Uw540GN865rNyiOs3VMnWhRaYQ97KAfudAHAnXzJ');
 
-// --- Récupération du thème actuel ---
-$theme = $_SESSION['current_theme'] ?? 'articles';
+// Récupération des données stockées en session par lesson.php
+$theme = $_GET['theme'] ?? ($_SESSION['current_theme'] ?? 'articles');
 $exercises = $_SESSION['exercises'][$theme] ?? [];
 $userAnswers = $_SESSION['user_answers'] ?? [];
 
-if (empty($exercises)) {
-    die("<h3 style='color:red;'>❌ Aucun exercice trouvé dans la session. Retourne sur la page des leçons.</h3>");
+// Vérifications
+if (!is_array($exercises) || count($exercises) === 0) {
+    // Pas d'exercices : afficher message utile
+    http_response_code(400);
+    echo "<h3 style='color:red;'>❌ Aucun exercice trouvé pour le thème sélectionné. Retourne sur la page des leçons.</h3>";
+    exit;
 }
 
-// --- Calcul du score et collecte des erreurs ---
+// Calcul du score et collecte des erreurs
 $results = [];
 $score = 0;
 $mistakes = [];
 
 foreach ($exercises as $i => $ex) {
-    $user = trim($userAnswers[$i] ?? '');
-    $correct = trim($ex['answer']);
+    $question = isset($ex['question']) ? (string)$ex['question'] : '';
+    $correct = isset($ex['answer']) ? trim((string)$ex['answer']) : '';
+    $user = isset($userAnswers[$i]) ? trim((string)$userAnswers[$i]) : '';
 
-    if (strcasecmp($user, $correct) === 0) {
-        $results[] = [
-            'q' => $ex['question'],
-            'user' => $user,
-            'ok' => true
-        ];
+    // comparaison insensible à la casse, en normalisant les apostrophes / espaces
+    $normalize = function($s) {
+        $s = mb_strtolower($s, 'UTF-8');
+        $s = str_replace(["’", "‘", "`"], "'", $s);
+        $s = trim(preg_replace('/\s+/', ' ', $s));
+        return $s;
+    };
+
+    $isCorrect = ($normalize($user) === $normalize($correct));
+
+    if ($isCorrect) {
+        $results[] = ['q' => $question, 'user' => $user, 'ok' => true];
         $score++;
     } else {
-        $results[] = [
-            'q' => $ex['question'],
-            'user' => $user,
-            'ok' => false,
-            'answer' => $correct
-        ];
-        $mistakes[] = [
-            'question' => $ex['question'],
-            'user' => $user,
-            'answer' => $correct
-        ];
+        $results[] = ['q' => $question, 'user' => $user, 'ok' => false, 'answer' => $correct];
+        $mistakes[] = ['question' => $question, 'user' => $user, 'answer' => $correct];
     }
 }
 
-// --- Appel API Cohere pour explication des erreurs ---
-$explanationText = "Aucune erreur détectée. Excellent travail !";
-if (!empty($mistakes)) {
-    $prompt = "Tu es Veronica AI, un professeur de français bienveillant. Explique à l’élève pourquoi ses réponses sont incorrectes, de façon claire et simple.
-Voici les erreurs commises :
-" . json_encode($mistakes, JSON_UNESCAPED_UNICODE) . "
-Pour chaque erreur, explique en 2 à 3 phrases pourquoi la réponse est fausse et donne la bonne réponse.";
+// Option : seuil de validation. Tu as demandé 20/39 précédemment.
+// Si tu veux un pourcentage, remplace 20 par round(count($exercises)*0.6) etc.
+$validation_threshold = 20;
+$validated = ($score >= $validation_threshold);
 
+// Préparer le prompt pour Cohere (explications) uniquement si erreurs
+$explanationText = "Aucune erreur détectée. Excellent travail !";
+
+if (!empty($mistakes)) {
+    // Construire un prompt clair et court pour expliquer chaque erreur
+    $promptParts = [];
+    foreach ($mistakes as $m) {
+        $promptParts[] = [
+            'question' => $m['question'],
+            'user_answer' => $m['user'],
+            'correct_answer' => $m['answer']
+        ];
+    }
+
+    $prompt = "Tu es Veronica AI, professeur de français bienveillant. Pour chaque élément du tableau JSON suivant, explique en 2 à 3 phrases de façon claire et naturelle :\n";
+    $prompt .= json_encode($promptParts, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+    $prompt .= "\nPour chaque erreur :\n1) Pourquoi la réponse correcte est celle indiquée\n2) Quelle est l'erreur faite par l'élève\n3) Une règle simple à retenir et un exemple court.\nRéponds en texte naturel (pas de JSON), séparé par paragraphes pour chaque erreur.";
+
+    // Appel API Cohere
     $payload = [
         "model" => "command-a-vision-07-2025",
         "message" => $prompt,
         "temperature" => 0.5,
-        "max_tokens" => 1000
+        "max_tokens" => 800
     ];
 
     $ch = curl_init("https://api.cohere.ai/v1/chat");
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_HTTPHEADER => [
-            "Authorization: Bearer " . COHERE_API_KEY,
-            "Content-Type: application/json"
-        ],
-        CURLOPT_POST => true,
-        CURLOPT_POSTFIELDS => json_encode($payload),
-        CURLOPT_SSL_VERIFYPEER => false
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        "Authorization: Bearer " . COHERE_API_KEY,
+        "Content-Type: application/json"
     ]);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 20);
 
     $resp = curl_exec($ch);
+    $curlErr = curl_error($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
 
-    $result = json_decode($resp, true);
-    $explanationText = $result['text'] ?? "⚠️ L’IA n’a pas pu générer les explications pour le moment.";
+    if ($curlErr) {
+        $explanationText = "⚠️ Impossible de contacter le service d'explication (cURL error). Réessaie plus tard.";
+        error_log("Cohere cURL error: " . $curlErr);
+    } else {
+        $decoded = json_decode($resp, true);
+        if (json_last_error() === JSON_ERROR_NONE && isset($decoded['text']) && trim($decoded['text']) !== '') {
+            $explanationText = trim($decoded['text']);
+        } else {
+            // Tentative : parfois la clé peut être 'response' ou autre - on affiche le debug minimal
+            if (isset($decoded['response'])) {
+                $explanationText = is_string($decoded['response']) ? $decoded['response'] : json_encode($decoded['response'], JSON_UNESCAPED_UNICODE);
+            } else {
+                $explanationText = "⚠️ L'IA n'a pas renvoyé d'explication lisible pour le moment.";
+                error_log("Cohere unexpected response (HTTP $httpCode): " . substr($resp ?? '', 0, 1000));
+            }
+        }
+    }
 }
 
-// --- Message de validation ---
-$validation = ($score >= count($exercises) * 0.8)
-    ? "🎉 Bravo ! Tu as validé ce thème avec succès."
-    : "⚠️ Tu dois encore t’entraîner un peu.";
-
-// --- Récupération du nom d’utilisateur ---
-$username = htmlspecialchars($_SESSION['username']);
+// Récupérer username pour affichage sécurisé
+$username_display = htmlspecialchars((string)($_SESSION['username'] ?? 'invité'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+$total = count($exercises);
 ?>
 <!doctype html>
 <html lang="fr">
 <head>
 <meta charset="utf-8">
 <title>Résultats — Veronica AI</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
-body {
-    font-family: "Poppins", sans-serif;
-    background: #f4f4f4;
-    padding: 30px;
-}
-.container {
-    max-width: 900px;
-    margin: auto;
-    background: white;
-    padding: 30px;
-    border-radius: 10px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-}
-.correct { color: #16a34a; }
-.wrong { color: #dc2626; }
-.result {
-    margin-top: 10px;
-    padding: 15px;
-    background: #f9fafb;
-    border-radius: 8px;
-}
-a.button {
-    display: inline-block;
-    margin-top: 20px;
-    background: linear-gradient(135deg, #4f46e5, #6366f1);
-    color: white;
-    padding: 10px 20px;
-    border-radius: 8px;
-    text-decoration: none;
-    font-weight: 600;
-}
-a.button:hover {
-    opacity: 0.9;
-}
-h1, h2, h3 { color: #1e293b; }
+    body{font-family:"Poppins",sans-serif;background:#f4f7fb;padding:20px;color:#1e293b;}
+    .container{max-width:960px;margin:20px auto;background:#fff;padding:24px;border-radius:12px;box-shadow:0 6px 30px rgba(2,6,23,0.08);}
+    h1{margin:0 0 8px;}
+    .summary{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:12px 0 18px;}
+    .badge{background:linear-gradient(135deg,#4f46e5,#6366f1);color:#fff;padding:8px 12px;border-radius:999px;font-weight:700;}
+    .correct{color:#16a34a;}
+    .wrong{color:#dc2626;}
+    .list{margin:14px 0;padding-left:18px;}
+    .explanation{background:#f8fafc;padding:14px;border-radius:8px;border-left:4px solid #c7d2fe;margin-top:16px;white-space:pre-wrap;}
+    a.button{display:inline-block;margin-top:18px;background:linear-gradient(135deg,#4f46e5,#6366f1);color:white;padding:10px 16px;border-radius:10px;text-decoration:none;font-weight:700;}
 </style>
 </head>
 <body>
 <div class="container">
-    <h1>Résultats du thème <em><?= htmlspecialchars($theme) ?></em></h1>
-    <h2>👋 Bonjour <?= $username ?></h2>
-    <p><strong>Score :</strong> <?= $score ?>/<?= count($exercises) ?></p>
-    <p><?= $validation ?></p>
+    <h1>Résultats du thème « <?= htmlspecialchars($theme, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?> »</h1>
+    <div class="summary">
+        <div>👋 Bonjour <strong><?= $username_display ?></strong></div>
+        <div class="badge"><?= $score ?> / <?= $total ?></div>
+        <div style="margin-left:auto;">
+            <?php if ($validated): ?>
+                <span style="background:#d1fae5;color:#065f46;padding:8px 12px;border-radius:999px;font-weight:700;">🎉 Validé (seuil <?= $validation_threshold ?>)</span>
+            <?php else: ?>
+                <span style="background:#fef3c7;color:#92400e;padding:8px 12px;border-radius:999px;font-weight:700;">⚠️ À améliorer</span>
+            <?php endif; ?>
+        </div>
+    </div>
 
-    <h3>🟢 Réponses correctes :</h3>
-    <ul>
+    <h3>✅ Réponses correctes</h3>
+    <ul class="list">
         <?php foreach ($results as $r): if ($r['ok']): ?>
-            <li class="correct"><?= htmlspecialchars($r['q']) ?> — <b><?= htmlspecialchars($r['user']) ?></b></li>
+            <li class="correct"><?= htmlspecialchars($r['q'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?> — <strong><?= htmlspecialchars($r['user'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></strong></li>
         <?php endif; endforeach; ?>
     </ul>
 
-    <h3>🔴 Réponses incorrectes :</h3>
-    <ul>
+    <h3>❌ Réponses incorrectes</h3>
+    <ul class="list">
         <?php foreach ($results as $r): if (!$r['ok']): ?>
             <li class="wrong">
-                <?= htmlspecialchars($r['q']) ?><br>
-                Ta réponse : <b><?= htmlspecialchars($r['user']) ?></b><br>
-                Bonne réponse : <b><?= htmlspecialchars($r['answer']) ?></b>
+                <?= htmlspecialchars($r['q'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?><br>
+                Ta réponse : <strong><?= htmlspecialchars($r['user'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?: '(vide)' ?></strong><br>
+                Bonne réponse : <strong><?= htmlspecialchars($r['answer'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></strong>
             </li>
         <?php endif; endforeach; ?>
     </ul>
 
-    <div class="result">
-        <h3>🧠 Explications de Veronica AI :</h3>
-        <p><?= nl2br(htmlspecialchars($explanationText)) ?></p>
+    <div class="explanation">
+        <h4 style="margin-top:0;">🧠 Explications de Veronica AI</h4>
+        <?= nl2br(htmlspecialchars($explanationText, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')) ?>
     </div>
 
-    <a href="dashboard.php" class="button">⬅ Retour au tableau de bord</a>
+    <a class="button" href="dashboard.php">⬅ Retour au tableau de bord</a>
 </div>
 </body>
 </html>
+<?php
+ob_end_flush();
+
 
 
