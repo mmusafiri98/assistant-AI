@@ -57,7 +57,7 @@ $stmt->execute([
 
 $conn=null;
 
-header("Location: thankyou.php");
+header("Location: english_thankyou.php");
 exit;
 
 }catch(PDOException $e){
