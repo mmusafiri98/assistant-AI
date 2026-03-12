@@ -2,17 +2,19 @@
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json');
 
-    // English presentation message
+    // English quiz introduction message
     $presentation = <<<EOT
-Hello! I'm Veronica AI, your virtual English instructor. 🌸
+Hello! I'm Veronica AI, your English learning assistant. 🌸
 
-I'm here to help you improve your English step by step — in a friendly and enjoyable way.
+Welcome to this English quiz designed for people who want to learn and improve their English.
 
-In a moment, we'll move to the next page where I'll ask you a few questions to understand your current English level.
+In a moment, you will start a short quiz that will help me understand your current level of English.
 
-I'll also ask why you want to learn English and how you discovered this application.
+The quiz is simple and friendly. It will ask you a few questions about vocabulary, grammar and understanding.
 
-Don't worry — it's not a test yet! Just a short conversation to get to know you better. 😊
+Don't worry — it is not an exam. It is only to help personalize your learning experience.
+
+When you are ready, click the button below to start the quiz. Good luck! 😊
 EOT;
 
     echo json_encode(["response" => $presentation]);
@@ -24,158 +26,186 @@ EOT;
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8" />
-    <title>Veronica AI Introduction</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <style>
-         html,
-        body {
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            height: 100%;
-            font-family: sans-serif;
-        }
+<meta charset="UTF-8">
+<title>English Learning Quiz - Veronica AI</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-        #full-video {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            object-fit: cover;
-            z-index: -1;
-        }
+<style>
 
-        .chat-container {
-            position: absolute;
-            bottom: 2rem;
-            left: 50%;
-            transform: translateX(-50%);
-            text-align: center;
-            width: 100%;
-            max-width: 90%;
-            color: white;
-        }
+html,body{
+margin:0;
+padding:0;
+height:100%;
+overflow:hidden;
+font-family:Arial, Helvetica, sans-serif;
+}
 
-        #messages {
-            border-radius: 1rem;
-            padding: 1rem;
-            font-size: 1.2rem;
-            max-height: 30vh;
-            overflow-y: auto;
-            margin-bottom: 1rem;
-        }
+#full-video{
+position:fixed;
+top:0;
+left:0;
+width:100vw;
+height:100vh;
+object-fit:cover;
+z-index:-1;
+}
 
-        #next-btn {
-            background-color: #3182ce;
-            color: white;
-            padding: 0.75rem 1.5rem;
-            font-size: 1rem;
-            border: none;
-            border-radius: 0.75rem;
-            cursor: pointer;
-        }
+.chat-container{
+position:absolute;
+bottom:40px;
+left:50%;
+transform:translateX(-50%);
+width:90%;
+max-width:700px;
+text-align:center;
+color:white;
+}
 
-        #next-btn:hover {
-            background-color: #2b6cb0;
-        }
-    </style>
+#messages{
+background:rgba(0,0,0,0.4);
+border-radius:15px;
+padding:20px;
+font-size:20px;
+max-height:200px;
+overflow-y:auto;
+margin-bottom:20px;
+}
+
+#start-btn{
+background:#3182ce;
+color:white;
+padding:14px 30px;
+font-size:18px;
+border:none;
+border-radius:12px;
+cursor:pointer;
+}
+
+#start-btn:hover{
+background:#2b6cb0;
+}
+
+</style>
 </head>
 
 <body>
-    <video id="full-video" loop muted playsinline autoplay>
-        <source src="jennifer.mp4" type="video/mp4" />
-        <source src="jennifer.webm" type="video/webm" />
-        Your browser does not support video playback.
-    </video>
 
-    <div class="chat-container">
-        <div id="messages"></div>
-        <button id="next-btn">➡️ Start English Test</button>
-    </div>
+<video id="full-video" loop muted autoplay playsinline>
+<source src="jennifer.mp4" type="video/mp4">
+<source src="jennifer.webm" type="video/webm">
+</video>
 
-    <script>
-        const messagesDiv = document.getElementById('messages');
-        const nextBtn = document.getElementById('next-btn');
-        const video = document.getElementById('full-video');
-        let presentationText = "";
-        let loopActive = true; // keep speaking until button clicked
+<div class="chat-container">
 
-        function addMessage(text) {
-            messagesDiv.textContent = ""; // only keep one message visible
-            const msg = document.createElement('div');
-            msg.textContent = "🤖 " + text;
-            messagesDiv.appendChild(msg);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        }
+<div id="messages"></div>
 
-        function speakText(text) {
-            if (!window.speechSynthesis) {
-                alert("⚠️ Your browser does not support speech synthesis.");
-                return;
-            }
+<button id="start-btn">Start English Quiz ➜</button>
 
-            window.speechSynthesis.cancel(); // stop any current speech
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'en-US';
-            utterance.rate = 1.0;
-            utterance.pitch = 1.0;
+</div>
 
-            // Wait for voices to load, then select English female voice if available
-            const speakNow = () => {
-                const voices = window.speechSynthesis.getVoices();
-                const englishVoice = voices.find(v =>
-                    v.lang.startsWith('en') && v.name.toLowerCase().includes('female')
-                ) || voices.find(v => v.lang.startsWith('en'));
-                if (englishVoice) utterance.voice = englishVoice;
+<script>
 
-                utterance.onend = () => {
-                    if (loopActive) {
-                        setTimeout(() => speakText(text), 3000);
-                    }
-                };
-                window.speechSynthesis.speak(utterance);
-            };
+const messagesDiv=document.getElementById("messages");
+const startBtn=document.getElementById("start-btn");
+const video=document.getElementById("full-video");
 
-            if (speechSynthesis.getVoices().length === 0) {
-                speechSynthesis.onvoiceschanged = speakNow;
-            } else {
-                speakNow();
-            }
-        }
+let presentationText="";
+let loopActive=true;
 
-        async function loadPresentation() {
-            try {
-                const res = await fetch(window.location.href, { method: 'POST' });
-                const data = await res.json();
-                presentationText = data.response || "Hello, I'm Veronica AI.";
-                addMessage(presentationText);
-                speakText(presentationText);
-            } catch (err) {
-                console.error("Presentation error:", err);
-            }
-        }
+function addMessage(text){
 
-        nextBtn.addEventListener('click', () => {
-            loopActive = false;
-            window.speechSynthesis.cancel(); // stop speaking
-            window.location.href = "quiz_eng.php"; // go to the English test
-        });
+messagesDiv.textContent="";
+const msg=document.createElement("div");
+msg.textContent="🤖 "+text;
 
-        window.onload = () => {
-            loadPresentation();
+messagesDiv.appendChild(msg);
 
-            setTimeout(() => {
-                video.play().catch(err => console.warn("Autoplay blocked:", err));
-            }, 500);
+}
 
-            video.onerror = () => {
-                console.error("Video load error.");
-                speakText("⚠️ The video could not be loaded.");
-            };
-        };
-    </script>
+function speakText(text){
+
+if(!window.speechSynthesis){
+alert("Speech synthesis not supported in this browser.");
+return;
+}
+
+window.speechSynthesis.cancel();
+
+const utterance=new SpeechSynthesisUtterance(text);
+utterance.lang="en-US";
+utterance.rate=1;
+utterance.pitch=1;
+
+const speakNow=()=>{
+
+const voices=speechSynthesis.getVoices();
+
+const voice=voices.find(v=>v.lang.startsWith("en"));
+
+if(voice) utterance.voice=voice;
+
+utterance.onend=()=>{
+if(loopActive){
+setTimeout(()=>speakText(text),3000);
+}
+};
+
+speechSynthesis.speak(utterance);
+
+};
+
+if(speechSynthesis.getVoices().length===0){
+speechSynthesis.onvoiceschanged=speakNow;
+}else{
+speakNow();
+}
+
+}
+
+async function loadPresentation(){
+
+try{
+
+const res=await fetch(window.location.href,{method:"POST"});
+const data=await res.json();
+
+presentationText=data.response;
+
+addMessage(presentationText);
+
+speakText(presentationText);
+
+}catch(e){
+
+console.error(e);
+
+}
+
+}
+
+startBtn.addEventListener("click",()=>{
+
+loopActive=false;
+
+speechSynthesis.cancel();
+
+window.location.href="quiz_eng.php";
+
+});
+
+window.onload=()=>{
+
+loadPresentation();
+
+setTimeout(()=>{
+
+video.play().catch(err=>console.warn(err));
+
+},500);
+
+};
+
+</script>
+
 </body>
-
 </html>
