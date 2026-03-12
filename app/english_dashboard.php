@@ -242,7 +242,7 @@ Logout
 
 <p>Please login again.</p>
 
-<button onclick="window.location.href='login.php'">
+<button onclick="window.location.href='index.php'">
 Login
 </button>
 
