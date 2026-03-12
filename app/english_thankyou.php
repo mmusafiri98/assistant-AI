@@ -132,7 +132,7 @@ We could not verify your account. Please log in again.
 
 </p>
 
-<button onclick="window.location.href='login.php'">
+<button onclick="window.location.href='index.php'">
 
 Return to Login
 
