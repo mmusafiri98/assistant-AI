@@ -230,7 +230,7 @@ Reading
 
 <div class="logout">
 
-<button onclick="window.location.href='logout.php'">
+<button onclick="window.location.href='index.php'">
 Logout
 </button>
 
