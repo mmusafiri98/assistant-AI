@@ -1,95 +1,173 @@
 <?php
-session_start();
+ob_start();
+session_start([
+'cookie_httponly'=>true,
+'cookie_secure'=>isset($_SERVER['HTTPS']),
+'cookie_samesite'=>'Strict',
+]);
 
-/* ===== DATABASE CONNECTION ===== */
+if($_SERVER['REQUEST_METHOD']==='POST'){
 
-$dsn = "pgsql:host=ep-autumn-salad-adwou7x2-pooler.c-2.us-east-1.aws.neon.tech;port=5432;dbname=veronica_db_login;sslmode=require";
-$username_db = "neondb_owner";
-$password_db = "npg_QolPDv5L9gVj";
+$how_found=htmlspecialchars(trim($_POST['how_found']??''));
+$level=htmlspecialchars(trim($_POST['level']??''));
+$goal=htmlspecialchars(trim($_POST['goal']??''));
+$duration=htmlspecialchars(trim($_POST['duration']??''));
+$motivation=htmlspecialchars(trim($_POST['motivation']??''));
+$skills=isset($_POST['skills']) && is_array($_POST['skills']) ? implode(", ",array_map('trim',$_POST['skills'])):'';
+$accent=htmlspecialchars(trim($_POST['accent']??''));
+$days=intval($_POST['days']??0);
+$minutes=intval($_POST['minutes']??0);
 
-$username = $_SESSION['username'] ?? null;
-$user_exists = false;
+if($how_found==''||$level==''||$goal==''||$duration==''||$motivation==''||$accent==''){
+$_SESSION['quiz_error']="Please complete all required fields.";
+}else{
 
-if($username){
+try{
 
-    try{
+$dsn="pgsql:host=ep-autumn-salad-adwou7x2-pooler.c-2.us-east-1.aws.neon.tech;port=5432;dbname=veronica_db_login;sslmode=require";
+$username_db="neondb_owner";
+$password_db="npg_QolPDv5L9gVj";
 
-        $conn = new PDO($dsn,$username_db,$password_db,[
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
-        ]);
+$conn=new PDO($dsn,$username_db,$password_db,[
+PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION,
+PDO::ATTR_EMULATE_PREPARES=>false,
+]);
 
-        $sql = "SELECT username FROM users WHERE username = :username LIMIT 1";
-        $stmt = $conn->prepare($sql);
-        $stmt->execute([':username'=>$username]);
+$sql="INSERT INTO user_quiz
+(username,how_found,level,goal,duration,motivation,skills,accent,days,minutes)
+VALUES
+(:username,:how_found,:level,:goal,:duration,:motivation,:skills,:accent,:days,:minutes)";
 
-        if($stmt->fetch()){
-            $user_exists = true;
-        }
+$stmt=$conn->prepare($sql);
 
-    }catch(PDOException $e){
-        error_log("DB error: ".$e->getMessage());
-    }
+$username=$_SESSION['username']??'guest';
+
+$stmt->execute([
+':username'=>$username,
+':how_found'=>$how_found,
+':level'=>$level,
+':goal'=>$goal,
+':duration'=>$duration,
+':motivation'=>$motivation,
+':skills'=>$skills,
+':accent'=>$accent,
+':days'=>$days,
+':minutes'=>$minutes
+]);
+
+$conn=null;
+
+header("Location: thankyou.php");
+exit;
+
+}catch(PDOException $e){
+
+error_log("DB Error: ".$e->getMessage());
+$_SESSION['quiz_error']="Database error while saving your answers.";
 
 }
 
+}
+
+}
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
 
 <meta charset="UTF-8">
-<title>Thank You – Veronica AI</title>
+<title>English Learning Quiz – Veronica AI</title>
+
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
 
 body{
 margin:0;
-font-family:Arial;
-background:linear-gradient(135deg,#6366f1,#38bdf8);
-height:100vh;
+font-family:Poppins,sans-serif;
+background:linear-gradient(135deg,#818cf8,#38bdf8);
+min-height:100vh;
 display:flex;
 align-items:center;
 justify-content:center;
 }
 
-.container{
-background:white;
-padding:40px;
+.quiz-container{
+background:rgba(255,255,255,0.25);
+backdrop-filter:blur(20px);
 border-radius:20px;
-text-align:center;
+padding:40px;
 width:90%;
-max-width:500px;
-box-shadow:0 10px 30px rgba(0,0,0,0.2);
+max-width:700px;
+text-align:center;
+box-shadow:0 8px 32px rgba(0,0,0,0.2);
 }
 
-h1{
-color:#4f46e5;
+h2{
+margin-bottom:20px;
 }
 
-.username{
-font-weight:bold;
-color:#1e40af;
+label{
+display:block;
+text-align:left;
+margin-top:12px;
+font-weight:600;
+}
+
+select,textarea,input[type=number]{
+width:100%;
+padding:10px;
+border-radius:10px;
+border:1px solid #cbd5f5;
+margin-top:6px;
+}
+
+textarea{
+height:80px;
+resize:none;
+}
+
+.skills-group{
+display:flex;
+flex-direction:column;
+text-align:left;
+gap:8px;
 }
 
 button{
-margin-top:25px;
-padding:12px 25px;
-border:none;
+margin-top:20px;
 background:#4f46e5;
 color:white;
-font-size:16px;
+border:none;
+padding:12px;
 border-radius:10px;
+font-size:16px;
 cursor:pointer;
+width:100%;
 }
 
 button:hover{
 background:#4338ca;
 }
 
-.error{
-color:red;
-font-weight:bold;
+.alert-error{
+background:#fee2e2;
+color:#b91c1c;
+padding:10px;
+border-radius:8px;
+margin-bottom:15px;
+}
+
+.veronica-message{
+background:rgba(255,255,255,0.25);
+padding:12px;
+border-radius:10px;
+margin-bottom:20px;
+font-style:italic;
 }
 
 </style>
@@ -98,71 +176,183 @@ font-weight:bold;
 
 <body>
 
-<div class="container">
+<div class="quiz-container">
 
-<?php if($user_exists): ?>
+<h2>🎓 Your English Learning Profile</h2>
 
-<h1>🎉 Quiz Completed!</h1>
+<div class="veronica-message" id="veronicaMsg">
+Hello 👋 I'm Veronica AI. Answer a few questions so I can personalize your English learning journey.
+</div>
 
-<p>
+<?php if(!empty($_SESSION['quiz_error'])): ?>
 
-Thank you <span class="username"><?=htmlspecialchars($username)?></span> for completing your English learning profile.
+<div class="alert-error"><?=htmlspecialchars($_SESSION['quiz_error'])?></div>
 
-</p>
+<?php unset($_SESSION['quiz_error']); endif; ?>
 
-<p>
+<form method="post">
 
-Veronica AI is preparing your personalized English learning path.
+<label>How did you discover this app?</label>
 
-</p>
+<select name="how_found" required>
 
-<button onclick="window.location.href='english_dashboard.php'">
+<option value="">Select</option>
+<option>Friend recommendation</option>
+<option>Social media</option>
+<option>Internet search</option>
+<option>Advertisement</option>
+<option>Other</option>
 
-Go to my English Dashboard
+</select>
 
-</button>
+<label>What is your current English level?</label>
 
-<?php else: ?>
+<select name="level" required>
 
-<h1>User not recognized</h1>
+<option value="">Choose level</option>
+<option>Beginner (A1-A2)</option>
+<option>Intermediate (B1-B2)</option>
+<option>Advanced (C1-C2)</option>
+<option>Not sure</option>
 
-<p class="error">
+</select>
 
-We could not verify your account. Please log in again.
+<label>Why do you want to learn English?</label>
 
-</p>
+<select name="goal" required>
 
-<button onclick="window.location.href='login.php'">
+<option value="">Select goal</option>
+<option>Travel</option>
+<option>Work</option>
+<option>Study abroad</option>
+<option>Personal interest</option>
+<option>Other</option>
 
-Return to Login
+</select>
 
-</button>
+<label>Which English accent would you like to learn?</label>
 
-<?php endif; ?>
+<select name="accent" required>
+
+<option value="">Choose accent</option>
+<option>American English 🇺🇸</option>
+<option>British English 🇬🇧</option>
+<option>Australian English 🇦🇺</option>
+
+</select>
+
+<label>How long do you want to reach your goal?</label>
+
+<select name="duration" required>
+
+<option value="">Select duration</option>
+<option>Less than 3 months</option>
+<option>3–6 months</option>
+<option>6–12 months</option>
+<option>More than a year</option>
+
+</select>
+
+<label>How much do you want to practice?</label>
+
+<div style="display:flex;gap:10px">
+
+<input type="number" name="days" min="1" max="7" placeholder="Days/week">
+
+<input type="number" name="minutes" min="5" max="300" placeholder="Minutes/day">
+
+</div>
+
+<div style="margin-top:20px">
+
+<canvas id="practiceChart"></canvas>
+
+</div>
+
+<label style="margin-top:15px">Which skills do you want to improve?</label>
+
+<div class="skills-group">
+
+<label><input type="checkbox" name="skills[]" value="Speaking"> Speaking</label>
+
+<label><input type="checkbox" name="skills[]" value="Listening"> Listening</label>
+
+<label><input type="checkbox" name="skills[]" value="Reading"> Reading</label>
+
+<label><input type="checkbox" name="skills[]" value="Writing"> Writing</label>
+
+<label><input type="checkbox" name="skills[]" value="Pronunciation"> Pronunciation</label>
+
+</div>
+
+<label>Your motivation to learn English</label>
+
+<textarea name="motivation" required placeholder="Example: I want to speak English fluently for travel and work."></textarea>
+
+<button type="submit">Submit my English profile</button>
+
+</form>
 
 </div>
 
 <script>
 
-<?php if($user_exists): ?>
+const ctx=document.getElementById("practiceChart");
 
-const msg="Congratulations <?=htmlspecialchars($username)?>. Your English learning profile has been created. Click the button to go to your dashboard.";
+let chart;
 
-<?php else: ?>
+function updateChart(){
 
-const msg="User not recognized. Please log in again.";
+const days=parseInt(document.querySelector('[name="days"]').value)||0;
 
-<?php endif; ?>
+const minutes=parseInt(document.querySelector('[name="minutes"]').value)||0;
+
+const week=days*minutes;
+
+const month=week*4;
+
+const data={
+labels:["Minutes / week","Minutes / month"],
+datasets:[{
+data:[week,month],
+backgroundColor:["#4f46e5","#38bdf8"]
+}]
+};
+
+if(chart) chart.destroy();
+
+chart=new Chart(ctx,{
+type:"bar",
+data:data,
+options:{
+plugins:{legend:{display:false}},
+scales:{y:{beginAtZero:true}}
+}
+});
+
+}
+
+document.querySelector('[name="days"]').addEventListener("input",updateChart);
+document.querySelector('[name="minutes"]').addEventListener("input",updateChart);
+
+window.onload=()=>{
+
+const msg="Hello! I'm Veronica AI. Answer these questions so I can create your personalized English learning plan.";
 
 if('speechSynthesis' in window){
 
 const speech=new SpeechSynthesisUtterance(msg);
 speech.lang="en-US";
+
 speechSynthesis.speak(speech);
 
 }
+
+};
 
 </script>
 
 </body>
 </html>
+
+<?php ob_end_flush(); ?>
