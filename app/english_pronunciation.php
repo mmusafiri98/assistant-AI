@@ -1,7 +1,3 @@
-<?php
-session_start();
-?>
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -15,10 +11,13 @@ session_start();
 <style>
 
 body{
+margin:0;
 font-family:Arial;
 background:linear-gradient(135deg,#6366f1,#38bdf8);
-margin:0;
-padding:40px;
+min-height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
 }
 
 .container{
@@ -27,23 +26,34 @@ background:white;
 padding:40px;
 border-radius:20px;
 max-width:700px;
-margin:auto;
+width:90%;
 text-align:center;
 box-shadow:0 10px 30px rgba(0,0,0,0.2);
 
 }
 
+h1{
+color:#4f46e5;
+}
+
 .word{
 
-font-size:32px;
+font-size:36px;
 font-weight:bold;
-margin:20px 0;
+margin:25px 0;
+color:#1e293b;
+
+}
+
+.buttons{
+
+margin-top:20px;
 
 }
 
 button{
 
-padding:10px 20px;
+padding:12px 20px;
 margin:10px;
 border:none;
 border-radius:10px;
@@ -66,11 +76,24 @@ color:white;
 
 }
 
+.next{
+
+background:#f59e0b;
+color:white;
+
+}
+
 .result{
 
 margin-top:20px;
 font-size:18px;
-color:#374151;
+
+}
+
+.score{
+
+margin-top:15px;
+font-weight:bold;
 
 }
 
@@ -92,9 +115,11 @@ color:white;
 
 <h1>🎤 English Pronunciation Practice</h1>
 
-<p>Listen to the word and repeat it.</p>
+<p>Listen to the word and repeat it with your microphone.</p>
 
-<div class="word" id="word">Hello</div>
+<div class="word" id="word"></div>
+
+<div class="buttons">
 
 <button class="listen" onclick="playWord()">
 🔊 Listen
@@ -104,7 +129,15 @@ color:white;
 🎙 Speak
 </button>
 
+<button class="next" onclick="nextWord()">
+➡ Next word
+</button>
+
+</div>
+
 <div class="result" id="result"></div>
+
+<div class="score" id="score"></div>
 
 <button class="back" onclick="window.location.href='english_dashboard.php'">
 ⬅ Back to Dashboard
@@ -114,11 +147,36 @@ color:white;
 
 <script>
 
-let currentWord = "Hello";
+const words = [
+"hello",
+"teacher",
+"student",
+"language",
+"computer",
+"travel",
+"music",
+"friend",
+"beautiful",
+"opportunity"
+];
+
+let index = 0;
+let score = 0;
+
+const wordElement = document.getElementById("word");
+
+function showWord(){
+
+wordElement.innerText = words[index];
+
+}
+
+showWord();
 
 function playWord(){
 
-const speech = new SpeechSynthesisUtterance(currentWord);
+const speech = new SpeechSynthesisUtterance(words[index]);
+
 speech.lang="en-US";
 
 speechSynthesis.speak(speech);
@@ -130,6 +188,7 @@ function startRecognition(){
 if(!('webkitSpeechRecognition' in window)){
 
 alert("Speech recognition not supported in this browser");
+
 return;
 
 }
@@ -137,14 +196,51 @@ return;
 const recognition = new webkitSpeechRecognition();
 
 recognition.lang="en-US";
+
 recognition.start();
 
 recognition.onresult = function(event){
 
-const spoken = event.results[0][0].transcript;
+const spoken = event.results[0][0].transcript.toLowerCase();
 
 document.getElementById("result").innerHTML =
 "You said: <b>"+spoken+"</b>";
+
+if(spoken.includes(words[index])){
+
+score++;
+
+document.getElementById("result").innerHTML +=
+"<br>✅ Good pronunciation!";
+
+}else{
+
+document.getElementById("result").innerHTML +=
+"<br>❌ Try again";
+
+}
+
+document.getElementById("score").innerText =
+"Score: "+score+" / "+words.length;
+
+};
+
+}
+
+function nextWord(){
+
+if(index < words.length-1){
+
+index++;
+
+showWord();
+
+document.getElementById("result").innerHTML="";
+
+}else{
+
+document.getElementById("result").innerHTML =
+"🎉 Exercise completed!";
 
 }
 
