@@ -29,7 +29,7 @@ padding:20px;
 background:white;
 padding:35px;
 border-radius:22px;
-max-width:900px;
+max-width:950px;
 width:100%;
 box-shadow:0 12px 35px rgba(0,0,0,0.22);
 }
@@ -60,8 +60,8 @@ margin-bottom:25px;
 display:flex;
 flex-wrap:wrap;
 gap:10px;
-margin-bottom:25px;
 justify-content:center;
+margin-bottom:25px;
 }
 
 button{
@@ -99,14 +99,31 @@ color:#111827;
 
 label{
 display:block;
-margin-bottom:8px;
+padding:8px;
+border-radius:8px;
+margin-bottom:6px;
 cursor:pointer;
 color:#334155;
+transition:0.2s;
+}
+
+label:hover{
+background:#e2e8f0;
+}
+
+.correct{
+background:#dcfce7 !important;
+border:1px solid #22c55e;
+}
+
+.wrong{
+background:#fee2e2 !important;
+border:1px solid #ef4444;
 }
 
 .result{
 margin-top:20px;
-font-size:20px;
+font-size:22px;
 font-weight:bold;
 text-align:center;
 color:#111827;
@@ -119,6 +136,14 @@ color:#64748b;
 font-size:15px;
 }
 
+.stats{
+margin-top:10px;
+text-align:center;
+font-size:16px;
+color:#4f46e5;
+font-weight:bold;
+}
+
 </style>
 </head>
 
@@ -129,7 +154,7 @@ font-size:15px;
 <h1>📖 Infinite Reading Practice</h1>
 
 <div class="subtitle">
-Unlimited automatic reading + text comprehension exercises
+Automatic reading + text comprehension with answer correction
 </div>
 
 <div class="controls">
@@ -138,7 +163,7 @@ Unlimited automatic reading + text comprehension exercises
 
 <button class="check" onclick="checkAnswers()">✅ Check Answers</button>
 
-<button class="next" onclick="generateExercise()">➡ Next Exercise</button>
+<button class="next" onclick="nextExercise()">➡ Next Exercise</button>
 
 <button class="reset" onclick="resetStats()">♻ Reset</button>
 
@@ -150,6 +175,10 @@ Unlimited automatic reading + text comprehension exercises
 
 <div class="result" id="result"></div>
 
+<div class="stats" id="stats">
+Total Score: 0
+</div>
+
 <div class="counter" id="counter">
 Exercise 1 / Infinite
 </div>
@@ -158,9 +187,9 @@ Exercise 1 / Infinite
 
 <script>
 
-/* ===========================
-   DATA BANK
-=========================== */
+/* =======================
+DATA
+======================= */
 
 const names = [
 "John","Emma","Lucas","Sophia","Daniel",
@@ -169,7 +198,7 @@ const names = [
 
 const cities = [
 "London","Rome","Paris","Madrid","Berlin",
-"Toronto","New York","Sydney","Dublin","Tokyo"
+"Toronto","Tokyo","Sydney","Dublin","New York"
 ];
 
 const transport = [
@@ -181,98 +210,100 @@ const subjects = [
 ];
 
 const hobbies = [
-"plays football","reads books","goes swimming",
-"watches movies","plays tennis","studies online",
-"listens to music","goes jogging"
+"plays football",
+"reads books",
+"goes swimming",
+"watches movies",
+"plays tennis",
+"studies online",
+"listens to music",
+"goes jogging"
 ];
 
-const foods = [
+const drinks = [
 "coffee","tea","juice","milk","water"
 ];
 
-let exerciseCount = 1;
-let totalScore = 0;
+/* =======================
+VARIABLES
+======================= */
 
-/* ===========================
-   HELPERS
-=========================== */
+let exercise = 1;
+let totalScore = 0;
+let correctAnswers = {};
+
+/* =======================
+HELPERS
+======================= */
 
 function random(arr){
 return arr[Math.floor(Math.random()*arr.length)];
 }
 
-function shuffle(array){
+function shuffle(arr){
 
-for(let i=array.length-1;i>0;i--){
+for(let i=arr.length-1;i>0;i--){
 
 let j=Math.floor(Math.random()*(i+1));
 
-[array[i],array[j]]=[array[j],array[i]];
+[arr[i],arr[j]]=[arr[j],arr[i]];
 
 }
 
-return array;
+return arr;
 
 }
 
-/* ===========================
-   GENERATE EXERCISE
-=========================== */
-
-let correctAnswers = {};
+/* =======================
+GENERATE EXERCISE
+======================= */
 
 function generateExercise(){
 
 const person = random(names);
 const city = random(cities);
-const go = random(transport);
-const subject1 = random(subjects);
+const move = random(transport);
+const sub1 = random(subjects);
 
-let subject2 = random(subjects);
+let sub2 = random(subjects);
 
-while(subject2 === subject1){
-subject2 = random(subjects);
+while(sub2 === sub1){
+sub2 = random(subjects);
 }
 
 const hobby = random(hobbies);
-const drink = random(foods);
+const drink = random(drinks);
 
-const storyText = `
+document.getElementById("story").innerHTML = `
 ${person} is a student.<br><br>
 ${person} lives in ${city}.<br><br>
 Every morning ${person} wakes up at 7 o'clock.<br><br>
 ${person} drinks ${drink} and eats breakfast.<br><br>
-After breakfast, ${person} goes to school ${go}.<br><br>
-${person} likes ${subject1} and ${subject2}.<br><br>
+After breakfast, ${person} goes to school ${move}.<br><br>
+${person} likes ${sub1} and ${sub2}.<br><br>
 After school, ${person} ${hobby}.
 `;
 
-document.getElementById("story").innerHTML = storyText;
-
-/* correct answers */
-
 correctAnswers = {
 q1: city,
-q2: go,
-q3: subject1 + " and " + subject2
+q2: move,
+q3: sub1 + " and " + sub2
 };
 
-/* fake answers */
-
-let cityOptions = shuffle([
+const cityOptions = shuffle([
 city,
 random(cities),
 random(cities)
 ]);
 
-let transportOptions = shuffle([
-go,
+const moveOptions = shuffle([
+move,
 random(transport),
 random(transport)
 ]);
 
-let subjectOptions = shuffle([
-subject1 + " and " + subject2,
+const subOptions = shuffle([
+sub1 + " and " + sub2,
 random(subjects)+" and "+random(subjects),
 random(subjects)+" and "+random(subjects)
 ]);
@@ -286,37 +317,36 @@ ${renderOptions("q1", cityOptions)}
 
 <div class="question">
 <p>2. How does ${person} go to school?</p>
-${renderOptions("q2", transportOptions)}
+${renderOptions("q2", moveOptions)}
 </div>
 
 <div class="question">
 <p>3. What subjects does ${person} like?</p>
-${renderOptions("q3", subjectOptions)}
+${renderOptions("q3", subOptions)}
 </div>
 
 `;
 
 document.getElementById("result").innerHTML = "";
-
 document.getElementById("counter").innerText =
-"Exercise " + exerciseCount + " / Infinite";
+"Exercise " + exercise + " / Infinite";
 
 }
 
-/* ===========================
-   RENDER OPTIONS
-=========================== */
+/* =======================
+RENDER OPTIONS
+======================= */
 
 function renderOptions(name,options){
 
 let html = "";
 
-options.forEach(opt=>{
+options.forEach(option=>{
 
 html += `
 <label>
-<input type="radio" name="${name}" value="${opt}">
- ${opt}
+<input type="radio" name="${name}" value="${option}">
+ ${option}
 </label>
 `;
 
@@ -326,25 +356,48 @@ return html;
 
 }
 
-/* ===========================
-   CHECK
-=========================== */
+/* =======================
+CHECK ANSWERS
+======================= */
 
 function checkAnswers(){
 
 let score = 0;
 
+/* remove old styles */
+document.querySelectorAll("label").forEach(l=>{
+l.classList.remove("correct","wrong");
+});
+
 for(let key in correctAnswers){
 
+const radios =
+document.querySelectorAll(`input[name="${key}"]`);
+
+radios.forEach(radio=>{
+
+const label = radio.parentElement;
+
+/* correct answer highlighted */
+if(radio.value === correctAnswers[key]){
+label.classList.add("correct");
+}
+
+/* selected wrong */
+if(radio.checked &&
+radio.value !== correctAnswers[key]){
+label.classList.add("wrong");
+}
+
+});
+
+/* count score */
 const selected =
 document.querySelector(`input[name="${key}"]:checked`);
 
-if(selected){
-
-if(selected.value === correctAnswers[key]){
+if(selected &&
+selected.value === correctAnswers[key]){
 score++;
-}
-
 }
 
 }
@@ -354,11 +407,41 @@ totalScore += score;
 document.getElementById("result").innerHTML =
 "🎯 Score: " + score + " / 3";
 
+document.getElementById("stats").innerHTML =
+"Total Score: " + totalScore;
+
 }
 
-/* ===========================
-   LISTEN STORY
-=========================== */
+/* =======================
+NEXT
+======================= */
+
+function nextExercise(){
+
+exercise++;
+generateExercise();
+
+}
+
+/* =======================
+RESET
+======================= */
+
+function resetStats(){
+
+exercise = 1;
+totalScore = 0;
+
+document.getElementById("stats").innerHTML =
+"Total Score: 0";
+
+generateExercise();
+
+}
+
+/* =======================
+VOICE
+======================= */
 
 function readStory(){
 
@@ -376,30 +459,7 @@ speechSynthesis.speak(speech);
 
 }
 
-/* ===========================
-   RESET
-=========================== */
-
-function resetStats(){
-
-exerciseCount = 1;
-totalScore = 0;
-generateExercise();
-
-}
-
-/* ===========================
-   NEXT EXERCISE
-=========================== */
-
-document.querySelector(".next")?.addEventListener("click",()=>{
-
-exerciseCount++;
-generateExercise();
-
-});
-
-/* first load */
+/* START */
 
 generateExercise();
 
