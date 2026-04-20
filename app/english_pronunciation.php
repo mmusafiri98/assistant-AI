@@ -5,7 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>English Pronunciation Master Trainer</title>
+<title>Infinite English Pronunciation Trainer</title>
 
 <style>
 
@@ -28,7 +28,7 @@ padding:20px;
 .container{
 background:white;
 width:95%;
-max-width:850px;
+max-width:900px;
 padding:35px;
 border-radius:25px;
 box-shadow:0 15px 40px rgba(0,0,0,0.25);
@@ -37,41 +37,26 @@ text-align:center;
 
 h1{
 color:#4f46e5;
-margin-bottom:15px;
+margin-bottom:10px;
 }
 
-p{
-color:#475569;
-margin-bottom:20px;
-}
-
-.level-box{
-display:flex;
-flex-wrap:wrap;
-justify-content:center;
-gap:10px;
+.subtitle{
+color:#64748b;
 margin-bottom:25px;
+font-size:16px;
 }
 
-.level-btn{
-padding:10px 18px;
-border:none;
-border-radius:10px;
-cursor:pointer;
-background:#e2e8f0;
-font-weight:bold;
-}
-
-.level-btn.active{
-background:#4f46e5;
-color:white;
+.sentence-box{
+background:#f8fafc;
+border-radius:18px;
+padding:25px;
+margin-bottom:25px;
 }
 
 .sentence{
 font-size:30px;
 font-weight:bold;
 color:#0f172a;
-margin:30px 0;
 line-height:1.4;
 }
 
@@ -80,16 +65,17 @@ display:flex;
 flex-wrap:wrap;
 justify-content:center;
 gap:12px;
-margin-top:20px;
+margin-bottom:20px;
 }
 
 button{
-padding:14px 20px;
+padding:14px 22px;
 border:none;
 border-radius:12px;
-font-size:16px;
 cursor:pointer;
+font-size:16px;
 font-weight:bold;
+color:white;
 transition:0.2s;
 }
 
@@ -99,35 +85,29 @@ transform:scale(1.04);
 
 .listen{
 background:#4f46e5;
-color:white;
 }
 
 .speak{
 background:#10b981;
-color:white;
 }
 
 .next{
 background:#f59e0b;
-color:white;
 }
 
 .auto{
 background:#0ea5e9;
-color:white;
 }
 
-.back{
+.reset{
 background:#ef4444;
-color:white;
-margin-top:20px;
 }
 
 .result{
-margin-top:25px;
+margin-top:20px;
 font-size:20px;
 color:#111827;
-min-height:40px;
+min-height:50px;
 }
 
 .score{
@@ -137,9 +117,15 @@ font-weight:bold;
 color:#4f46e5;
 }
 
-.progress{
+.counter{
 margin-top:10px;
-font-size:15px;
+font-size:16px;
+color:#475569;
+}
+
+.footer{
+margin-top:25px;
+font-size:14px;
 color:#64748b;
 }
 
@@ -150,19 +136,15 @@ color:#64748b;
 
 <div class="container">
 
-<h1>🎤 English Pronunciation Master Trainer</h1>
+<h1>🎤 Infinite English Pronunciation Trainer</h1>
 
-<p>Listen to billions of English phrases and improve pronunciation.</p>
-
-<div class="level-box">
-
-<button class="level-btn active" onclick="changeLevel('easy',this)">Easy</button>
-<button class="level-btn" onclick="changeLevel('medium',this)">Medium</button>
-<button class="level-btn" onclick="changeLevel('hard',this)">Hard</button>
-
+<div class="subtitle">
+Practice with unlimited English phrases generated automatically
 </div>
 
+<div class="sentence-box">
 <div class="sentence" id="sentence"></div>
+</div>
 
 <div class="controls">
 
@@ -172,7 +154,9 @@ color:#64748b;
 
 <button class="next" onclick="nextSentence()">➡ Next</button>
 
-<button class="auto" onclick="autoMode()">🔁 Auto Listen</button>
+<button class="auto" onclick="autoListen()">🔁 Auto Listen</button>
+
+<button class="reset" onclick="resetScore()">♻ Reset</button>
 
 </div>
 
@@ -180,134 +164,144 @@ color:#64748b;
 
 <div class="score" id="score">Score: 0</div>
 
-<div class="progress" id="progress"></div>
+<div class="counter" id="counter">
+Phrase 1 / 10,000+
+</div>
 
-<button class="back" onclick="window.location.href='english_dashboard.php'">
-⬅ Back
-</button>
+<div class="footer">
+Unlimited combinations = 10,000+ phrases
+</div>
 
 </div>
 
 <script>
 
-const easy = [
-"Hello how are you",
-"I like music",
-"Where are you",
-"I am happy today",
-"Can you help me",
-"I love this city",
-"What is your name",
-"This is my house",
-"I want some water",
-"Good morning friend"
+/* ---------- WORD BANK ---------- */
+
+const subjects = [
+"I","You","We","They","He","She","My brother","My sister",
+"The teacher","My friend","The student","Our family"
 ];
 
-const medium = [
-"I would like to travel around the world",
-"The weather is beautiful today",
-"I need to improve my English speaking skills",
-"She is studying at the university",
-"We are going to the supermarket later",
-"My brother works in a big company",
-"I enjoy reading books at night",
-"The train arrives in ten minutes",
-"Can you repeat that sentence please",
-"I forgot my wallet at home"
+const verbs = [
+"like","love","want","need","prefer","study","watch",
+"build","create","buy","sell","find","choose","remember",
+"visit","improve","practice","learn","open","close"
 ];
 
-const hard = [
-"Success comes from consistency and discipline",
-"I want to become fluent in English quickly",
-"The opportunity was greater than I expected",
-"Technology is changing the modern world rapidly",
-"I believe confidence is built through practice",
-"Sometimes failure teaches more than success",
-"The pronunciation of this phrase is difficult",
-"I am creating a better future for myself",
-"Every challenge can become a lesson",
-"Communication is the key to growth"
+const objects = [
+"music","a new car","this city","my future","English",
+"a better job","success","the world","a laptop",
+"new ideas","a house","the lesson","this game",
+"good opportunities","real happiness","your help"
 ];
 
-let currentList = easy;
-let index = 0;
+const extras = [
+"every day",
+"right now",
+"in the morning",
+"at night",
+"with my friends",
+"for the future",
+"without fear",
+"with passion",
+"this week",
+"next month",
+"very quickly",
+"with confidence",
+"before dinner",
+"after school",
+"during summer"
+];
+
+/* ---------- VARIABLES ---------- */
+
+let currentSentence = "";
 let score = 0;
-let autoPlaying = false;
+let phraseCount = 1;
+let autoMode = false;
 
-const sentenceEl = document.getElementById("sentence");
+/* ---------- GENERATE SENTENCE ---------- */
+
+function randomItem(arr){
+return arr[Math.floor(Math.random()*arr.length)];
+}
+
+function generateSentence(){
+
+let sentence =
+randomItem(subjects) + " " +
+randomItem(verbs) + " " +
+randomItem(objects) + " " +
+randomItem(extras);
+
+return sentence;
+
+}
+
+/* ---------- SHOW SENTENCE ---------- */
 
 function showSentence(){
 
-sentenceEl.innerText = currentList[index];
+currentSentence = generateSentence();
 
-document.getElementById("progress").innerText =
-"Phrase " + (index+1) + " / " + currentList.length;
+document.getElementById("sentence").innerText = currentSentence;
+
+document.getElementById("result").innerHTML = "";
+
+document.getElementById("counter").innerText =
+"Phrase " + phraseCount + " / 10,000+";
 
 }
 
 showSentence();
 
-function changeLevel(level,btn){
-
-document.querySelectorAll(".level-btn").forEach(b=>{
-b.classList.remove("active");
-});
-
-btn.classList.add("active");
-
-if(level==="easy") currentList = easy;
-if(level==="medium") currentList = medium;
-if(level==="hard") currentList = hard;
-
-index = 0;
-score = 0;
-
-document.getElementById("score").innerText="Score: 0";
-document.getElementById("result").innerHTML="";
-
-showSentence();
-
-}
+/* ---------- SPEAK ---------- */
 
 function playSentence(){
 
-const speech = new SpeechSynthesisUtterance(currentList[index]);
+const speech = new SpeechSynthesisUtterance(currentSentence);
 
-speech.lang="en-US";
-speech.rate=0.9;
-speech.pitch=1;
+speech.lang = "en-US";
+speech.rate = 0.9;
+speech.pitch = 1;
 
+speechSynthesis.cancel();
 speechSynthesis.speak(speech);
 
 }
+
+/* ---------- RECOGNITION ---------- */
 
 function startRecognition(){
 
 if(!('webkitSpeechRecognition' in window)){
 
-alert("Speech recognition not supported");
-
+alert("Speech recognition not supported in this browser.");
 return;
 
 }
 
 const recognition = new webkitSpeechRecognition();
 
-recognition.lang="en-US";
-recognition.interimResults=false;
+recognition.lang = "en-US";
+recognition.interimResults = false;
+recognition.maxAlternatives = 1;
 
 recognition.start();
 
 recognition.onresult = function(event){
 
-const spoken = event.results[0][0].transcript.toLowerCase();
+const spoken =
+event.results[0][0].transcript.toLowerCase();
 
-const target = currentList[index].toLowerCase();
+const target =
+currentSentence.toLowerCase();
 
 document.getElementById("result").innerHTML =
-"You said: <b>"+spoken+"</b>";
+"You said: <b>" + spoken + "</b>";
 
-if(compareWords(spoken,target)){
+if(compareSpeech(spoken,target)){
 
 score++;
 
@@ -328,59 +322,69 @@ document.getElementById("score").innerText =
 
 }
 
-function compareWords(a,b){
+/* ---------- COMPARE ---------- */
 
-let aw = a.split(" ");
-let bw = b.split(" ");
+function compareSpeech(user,target){
 
-let count = 0;
+let userWords = user.split(" ");
+let targetWords = target.split(" ");
 
-bw.forEach(word=>{
-if(aw.includes(word)) count++;
+let correct = 0;
+
+targetWords.forEach(word=>{
+if(userWords.includes(word)) correct++;
 });
 
-return count >= Math.floor(bw.length*0.7);
+return correct >= Math.floor(targetWords.length * 0.6);
 
 }
+
+/* ---------- NEXT ---------- */
 
 function nextSentence(){
 
-if(index < currentList.length-1){
-
-index++;
+phraseCount++;
 
 showSentence();
 
-document.getElementById("result").innerHTML="";
-
-}else{
-
-document.getElementById("result").innerHTML =
-"🎉 Training completed!";
-
 }
 
-}
+/* ---------- AUTO LISTEN ---------- */
 
-function autoMode(){
+function autoListen(){
 
-if(autoPlaying) return;
+if(autoMode) return;
 
-autoPlaying = true;
+autoMode = true;
 
-let repeat = setInterval(()=>{
+let count = 0;
+
+const interval = setInterval(()=>{
 
 playSentence();
 
-if(!autoPlaying){
-clearInterval(repeat);
+count++;
+
+if(count >= 8){
+clearInterval(interval);
+autoMode = false;
 }
 
 },4000);
 
-setTimeout(()=>{
-autoPlaying=false;
-},30000);
+}
+
+/* ---------- RESET ---------- */
+
+function resetScore(){
+
+score = 0;
+phraseCount = 1;
+
+document.getElementById("score").innerText =
+"Score: 0";
+
+showSentence();
 
 }
 
