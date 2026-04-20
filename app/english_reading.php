@@ -2,203 +2,406 @@
 <html lang="en">
 
 <head>
-
 <meta charset="UTF-8">
-<title>English Reading Practice</title>
-
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Infinite English Reading Practice</title>
 
 <style>
 
-body{
+*{
 margin:0;
+padding:0;
+box-sizing:border-box;
+}
+
+body{
 font-family:Arial, sans-serif;
 background:linear-gradient(135deg,#6366f1,#38bdf8);
 min-height:100vh;
 display:flex;
 justify-content:center;
 align-items:center;
+padding:20px;
 }
 
 .container{
-
 background:white;
-padding:40px;
-border-radius:20px;
-max-width:700px;
-width:90%;
-box-shadow:0 10px 30px rgba(0,0,0,0.2);
-
+padding:35px;
+border-radius:22px;
+max-width:900px;
+width:100%;
+box-shadow:0 12px 35px rgba(0,0,0,0.22);
 }
 
 h1{
 text-align:center;
 color:#4f46e5;
+margin-bottom:10px;
+}
+
+.subtitle{
+text-align:center;
+color:#64748b;
+margin-bottom:25px;
 }
 
 .story{
-
-background:#f1f5f9;
-padding:20px;
-border-radius:10px;
-line-height:1.6;
-margin-top:20px;
-
+background:#f8fafc;
+padding:25px;
+border-radius:14px;
+line-height:1.8;
+font-size:18px;
+color:#0f172a;
+margin-bottom:25px;
 }
 
-.questions{
-
-margin-top:25px;
-
-}
-
-.question{
-
-margin-bottom:15px;
-
+.controls{
+display:flex;
+flex-wrap:wrap;
+gap:10px;
+margin-bottom:25px;
+justify-content:center;
 }
 
 button{
-
-margin-top:20px;
-padding:12px 20px;
+padding:12px 18px;
 border:none;
 border-radius:10px;
 cursor:pointer;
-font-size:16px;
-
+font-size:15px;
+font-weight:bold;
+color:white;
+transition:0.2s;
 }
 
-.check{
-
-background:#4f46e5;
-color:white;
-
+button:hover{
+transform:scale(1.04);
 }
 
-.back{
+.listen{background:#10b981;}
+.check{background:#4f46e5;}
+.next{background:#f59e0b;}
+.reset{background:#ef4444;}
 
-background:#ef4444;
-color:white;
-margin-left:10px;
+.question{
+background:#f1f5f9;
+padding:18px;
+border-radius:12px;
+margin-bottom:15px;
+}
 
+.question p{
+margin-bottom:12px;
+font-weight:bold;
+color:#111827;
+}
+
+label{
+display:block;
+margin-bottom:8px;
+cursor:pointer;
+color:#334155;
 }
 
 .result{
-
 margin-top:20px;
+font-size:20px;
 font-weight:bold;
-font-size:18px;
-
+text-align:center;
+color:#111827;
 }
 
-.listen{
-
-background:#10b981;
-color:white;
-margin-top:15px;
-
+.counter{
+margin-top:12px;
+text-align:center;
+color:#64748b;
+font-size:15px;
 }
 
 </style>
-
 </head>
 
 <body>
 
 <div class="container">
 
-<h1>📖 Reading Practice</h1>
+<h1>📖 Infinite Reading Practice</h1>
 
-<p>Read the story below and answer the questions.</p>
+<div class="subtitle">
+Unlimited automatic reading + text comprehension exercises
+</div>
 
-<button class="listen" onclick="readText()">🔊 Listen to the story</button>
+<div class="controls">
 
-<div class="story" id="story">
+<button class="listen" onclick="readStory()">🔊 Listen</button>
 
-John is a student.  
-He lives in London.  
-Every morning he wakes up at 7 o'clock.  
+<button class="check" onclick="checkAnswers()">✅ Check Answers</button>
 
-He eats breakfast and drinks coffee.  
-After breakfast, he goes to school by bus.  
+<button class="next" onclick="generateExercise()">➡ Next Exercise</button>
 
-John likes English and history.  
-After school he studies and sometimes plays football with his friends.
+<button class="reset" onclick="resetStats()">♻ Reset</button>
 
 </div>
 
-<div class="questions">
+<div class="story" id="story"></div>
 
-<div class="question">
-
-<p><b>1. Where does John live?</b></p>
-
-<label><input type="radio" name="q1" value="0"> Paris</label><br>
-<label><input type="radio" name="q1" value="1"> London</label><br>
-<label><input type="radio" name="q1" value="0"> Rome</label>
-
-</div>
-
-<div class="question">
-
-<p><b>2. How does John go to school?</b></p>
-
-<label><input type="radio" name="q2" value="1"> By bus</label><br>
-<label><input type="radio" name="q2" value="0"> By train</label><br>
-<label><input type="radio" name="q2" value="0"> By bike</label>
-
-</div>
-
-<div class="question">
-
-<p><b>3. What does John like?</b></p>
-
-<label><input type="radio" name="q3" value="1"> English and history</label><br>
-<label><input type="radio" name="q3" value="0"> Math and science</label><br>
-<label><input type="radio" name="q3" value="0"> Art and music</label>
-
-</div>
-
-</div>
-
-<button class="check" onclick="checkAnswers()">Check Answers</button>
-
-<button class="back" onclick="window.location.href='english_dashboard.php'">
-Back to Dashboard
-</button>
+<div id="questions"></div>
 
 <div class="result" id="result"></div>
+
+<div class="counter" id="counter">
+Exercise 1 / Infinite
+</div>
 
 </div>
 
 <script>
 
-function readText(){
+/* ===========================
+   DATA BANK
+=========================== */
 
-const text = document.getElementById("story").innerText;
+const names = [
+"John","Emma","Lucas","Sophia","Daniel",
+"Olivia","Michael","Anna","David","Julia"
+];
 
-const speech = new SpeechSynthesisUtterance(text);
-speech.lang = "en-US";
+const cities = [
+"London","Rome","Paris","Madrid","Berlin",
+"Toronto","New York","Sydney","Dublin","Tokyo"
+];
 
-speechSynthesis.speak(speech);
+const transport = [
+"by bus","by train","by bike","by car","on foot"
+];
+
+const subjects = [
+"English","history","math","science","music","art"
+];
+
+const hobbies = [
+"plays football","reads books","goes swimming",
+"watches movies","plays tennis","studies online",
+"listens to music","goes jogging"
+];
+
+const foods = [
+"coffee","tea","juice","milk","water"
+];
+
+let exerciseCount = 1;
+let totalScore = 0;
+
+/* ===========================
+   HELPERS
+=========================== */
+
+function random(arr){
+return arr[Math.floor(Math.random()*arr.length)];
+}
+
+function shuffle(array){
+
+for(let i=array.length-1;i>0;i--){
+
+let j=Math.floor(Math.random()*(i+1));
+
+[array[i],array[j]]=[array[j],array[i]];
 
 }
+
+return array;
+
+}
+
+/* ===========================
+   GENERATE EXERCISE
+=========================== */
+
+let correctAnswers = {};
+
+function generateExercise(){
+
+const person = random(names);
+const city = random(cities);
+const go = random(transport);
+const subject1 = random(subjects);
+
+let subject2 = random(subjects);
+
+while(subject2 === subject1){
+subject2 = random(subjects);
+}
+
+const hobby = random(hobbies);
+const drink = random(foods);
+
+const storyText = `
+${person} is a student.<br><br>
+${person} lives in ${city}.<br><br>
+Every morning ${person} wakes up at 7 o'clock.<br><br>
+${person} drinks ${drink} and eats breakfast.<br><br>
+After breakfast, ${person} goes to school ${go}.<br><br>
+${person} likes ${subject1} and ${subject2}.<br><br>
+After school, ${person} ${hobby}.
+`;
+
+document.getElementById("story").innerHTML = storyText;
+
+/* correct answers */
+
+correctAnswers = {
+q1: city,
+q2: go,
+q3: subject1 + " and " + subject2
+};
+
+/* fake answers */
+
+let cityOptions = shuffle([
+city,
+random(cities),
+random(cities)
+]);
+
+let transportOptions = shuffle([
+go,
+random(transport),
+random(transport)
+]);
+
+let subjectOptions = shuffle([
+subject1 + " and " + subject2,
+random(subjects)+" and "+random(subjects),
+random(subjects)+" and "+random(subjects)
+]);
+
+document.getElementById("questions").innerHTML = `
+
+<div class="question">
+<p>1. Where does ${person} live?</p>
+${renderOptions("q1", cityOptions)}
+</div>
+
+<div class="question">
+<p>2. How does ${person} go to school?</p>
+${renderOptions("q2", transportOptions)}
+</div>
+
+<div class="question">
+<p>3. What subjects does ${person} like?</p>
+${renderOptions("q3", subjectOptions)}
+</div>
+
+`;
+
+document.getElementById("result").innerHTML = "";
+
+document.getElementById("counter").innerText =
+"Exercise " + exerciseCount + " / Infinite";
+
+}
+
+/* ===========================
+   RENDER OPTIONS
+=========================== */
+
+function renderOptions(name,options){
+
+let html = "";
+
+options.forEach(opt=>{
+
+html += `
+<label>
+<input type="radio" name="${name}" value="${opt}">
+ ${opt}
+</label>
+`;
+
+});
+
+return html;
+
+}
+
+/* ===========================
+   CHECK
+=========================== */
 
 function checkAnswers(){
 
 let score = 0;
 
-const answers = document.querySelectorAll("input[type=radio]:checked");
+for(let key in correctAnswers){
 
-answers.forEach(a=>{
-score += parseInt(a.value);
-});
+const selected =
+document.querySelector(`input[name="${key}"]:checked`);
 
-document.getElementById("result").innerHTML =
-"Your score: "+score+" / 3";
+if(selected){
+
+if(selected.value === correctAnswers[key]){
+score++;
+}
 
 }
+
+}
+
+totalScore += score;
+
+document.getElementById("result").innerHTML =
+"🎯 Score: " + score + " / 3";
+
+}
+
+/* ===========================
+   LISTEN STORY
+=========================== */
+
+function readStory(){
+
+const text =
+document.getElementById("story").innerText;
+
+const speech =
+new SpeechSynthesisUtterance(text);
+
+speech.lang = "en-US";
+speech.rate = 0.95;
+
+speechSynthesis.cancel();
+speechSynthesis.speak(speech);
+
+}
+
+/* ===========================
+   RESET
+=========================== */
+
+function resetStats(){
+
+exerciseCount = 1;
+totalScore = 0;
+generateExercise();
+
+}
+
+/* ===========================
+   NEXT EXERCISE
+=========================== */
+
+document.querySelector(".next")?.addEventListener("click",()=>{
+
+exerciseCount++;
+generateExercise();
+
+});
+
+/* first load */
+
+generateExercise();
 
 </script>
 
