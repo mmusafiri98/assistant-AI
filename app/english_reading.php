@@ -18,7 +18,7 @@ function callCohere($prompt, $apiKey) {
     $url  = "https://api.cohere.ai/v1/chat";
 
     $data = [
-        "model"       => "command-r-plus",
+        "model"       => "command-a-vision-07-2025",
         "temperature" => 0.8,
         "max_tokens"  => 1200,
         "message"     => $prompt,
