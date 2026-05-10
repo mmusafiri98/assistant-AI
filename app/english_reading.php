@@ -6,7 +6,7 @@ session_start();
 CONFIG
 =========================== */
 
-$COHERE_API_KEY = "YOUR_COHERE_API_KEY";
+$COHERE_API_KEY = "Uw540GN865rNyiOs3VMnWhRaYQ97KAfudAHAnXzJ";
 
 
 /* ===========================
