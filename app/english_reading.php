@@ -1,11 +1,123 @@
+<?php
+
+session_start();
+
+/* ===========================
+CONFIG
+=========================== */
+
+$COHERE_API_KEY = "YOUR_COHERE_API_KEY";
+
+
+/* ===========================
+CALL COHERE
+=========================== */
+
+function callCohere($prompt,$apiKey){
+
+$url="https://api.cohere.ai/v1/chat";
+
+$data=[
+"model"=>"command-r-plus",
+"temperature"=>0.8,
+"max_tokens"=>1200,
+"message"=>$prompt
+];
+
+$ch=curl_init($url);
+
+curl_setopt($ch,CURLOPT_RETURNTRANSFER,true);
+curl_setopt($ch,CURLOPT_POST,true);
+
+curl_setopt($ch,CURLOPT_HTTPHEADER,[
+"Content-Type: application/json",
+"Authorization: Bearer ".$apiKey
+]);
+
+curl_setopt($ch,CURLOPT_POSTFIELDS,json_encode($data));
+
+$response=curl_exec($ch);
+
+curl_close($ch);
+
+$json=json_decode($response,true);
+
+if(isset($json["text"])){
+return $json["text"];
+}
+
+if(isset($json["message"]["content"][0]["text"])){
+return $json["message"]["content"][0]["text"];
+}
+
+return null;
+
+}
+
+
+/* ===========================
+GENERATE EXERCISE
+=========================== */
+
+if(isset($_POST["generate"])){
+
+$prompt="
+Create an english reading exercise.
+
+Return ONLY valid JSON.
+
+Format:
+
+{
+\"story\":\"...\",
+\"questions\":[
+{
+\"question\":\"...\",
+\"options\":[\"...\",\"...\",\"...\"],
+\"answer\":\"...\"
+}
+]
+}
+
+Rules:
+
+- story between 120 and 180 words
+- 3 multiple choice questions
+- level A2/B1
+- educational
+";
+
+$result=callCohere($prompt,$COHERE_API_KEY);
+
+$_SESSION["exercise"]=json_decode($result,true);
+
+header("Location: lesson_english.php");
+exit;
+
+}
+
+
+/* ===========================
+RESET
+=========================== */
+
+if(isset($_POST["reset"])){
+
+unset($_SESSION["exercise"]);
+
+header("Location: lesson_english.php");
+exit;
+
+}
+
+?>
 <!DOCTYPE html>
-<html lang="en">
-
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Infinite English Reading Practice</title>
+<meta charset="UTF-8">
+
+<title>English AI Lesson</title>
 
 <style>
 
@@ -16,454 +128,423 @@ box-sizing:border-box;
 }
 
 body{
-font-family:Arial, sans-serif;
-background:linear-gradient(135deg,#6366f1,#38bdf8);
-min-height:100vh;
-display:flex;
-justify-content:center;
-align-items:center;
-padding:20px;
+
+font-family:Arial;
+background:linear-gradient(135deg,#4f46e5,#06b6d4);
+
+padding:30px;
+
 }
 
 .container{
+
+max-width:1000px;
+
+margin:auto;
+
 background:white;
-padding:35px;
-border-radius:22px;
-max-width:950px;
-width:100%;
-box-shadow:0 12px 35px rgba(0,0,0,0.22);
+
+border-radius:20px;
+
+padding:30px;
+
+box-shadow:0 15px 40px rgba(0,0,0,.2);
+
 }
 
 h1{
-text-align:center;
-color:#4f46e5;
-margin-bottom:10px;
-}
 
-.subtitle{
 text-align:center;
-color:#64748b;
-margin-bottom:25px;
+
+color:#4338ca;
+
+margin-bottom:20px;
+
 }
 
 .story{
+
 background:#f8fafc;
+
 padding:25px;
-border-radius:14px;
+
+border-radius:15px;
+
 line-height:1.8;
+
 font-size:18px;
-color:#0f172a;
+
 margin-bottom:25px;
-}
 
-.controls{
-display:flex;
-flex-wrap:wrap;
-gap:10px;
-justify-content:center;
-margin-bottom:25px;
 }
-
-button{
-padding:12px 18px;
-border:none;
-border-radius:10px;
-cursor:pointer;
-font-size:15px;
-font-weight:bold;
-color:white;
-transition:0.2s;
-}
-
-button:hover{
-transform:scale(1.04);
-}
-
-.listen{background:#10b981;}
-.check{background:#4f46e5;}
-.next{background:#f59e0b;}
-.reset{background:#ef4444;}
 
 .question{
+
 background:#f1f5f9;
-padding:18px;
+
+padding:20px;
+
 border-radius:12px;
+
 margin-bottom:15px;
+
 }
 
 .question p{
-margin-bottom:12px;
+
 font-weight:bold;
-color:#111827;
+
+margin-bottom:10px;
+
 }
 
 label{
-display:block;
-padding:8px;
-border-radius:8px;
-margin-bottom:6px;
-cursor:pointer;
-color:#334155;
-transition:0.2s;
-}
 
-label:hover{
-background:#e2e8f0;
+display:block;
+
+padding:8px;
+
+cursor:pointer;
+
+border-radius:8px;
+
+margin-bottom:5px;
+
 }
 
 .correct{
-background:#dcfce7 !important;
-border:1px solid #22c55e;
+
+background:#dcfce7;
+
 }
 
 .wrong{
-background:#fee2e2 !important;
-border:1px solid #ef4444;
+
+background:#fee2e2;
+
+}
+
+.controls{
+
+display:flex;
+
+gap:10px;
+
+justify-content:center;
+
+margin-bottom:20px;
+
+flex-wrap:wrap;
+
+}
+
+button{
+
+padding:12px 18px;
+
+border:none;
+
+border-radius:10px;
+
+color:white;
+
+font-weight:bold;
+
+cursor:pointer;
+
+}
+
+.generate{
+
+background:#4f46e5;
+
+}
+
+.listen{
+
+background:#10b981;
+
+}
+
+.check{
+
+background:#f59e0b;
+
+}
+
+.reset{
+
+background:#ef4444;
+
 }
 
 .result{
-margin-top:20px;
+
+text-align:center;
+
 font-size:22px;
-font-weight:bold;
-text-align:center;
-color:#111827;
-}
 
-.counter{
-margin-top:12px;
-text-align:center;
-color:#64748b;
-font-size:15px;
-}
+margin-top:20px;
 
-.stats{
-margin-top:10px;
-text-align:center;
-font-size:16px;
-color:#4f46e5;
 font-weight:bold;
+
 }
 
 </style>
-</head>
 
+</head>
 <body>
 
 <div class="container">
 
-<h1>📖 Infinite Reading Practice</h1>
+<h1>AI English Reading Lesson</h1>
 
-<div class="subtitle">
-Automatic reading + text comprehension with answer correction
-</div>
 
 <div class="controls">
 
-<button class="listen" onclick="readStory()">🔊 Listen</button>
+<form method="POST">
 
-<button class="check" onclick="checkAnswers()">✅ Check Answers</button>
+<button class="generate" name="generate">
+Generate Exercise
+</button>
 
-<button class="next" onclick="nextExercise()">➡ Next Exercise</button>
+</form>
 
-<button class="reset" onclick="resetStats()">♻ Reset</button>
+
+<?php if(isset($_SESSION["exercise"])): ?>
+
+<button
+type="button"
+class="listen"
+onclick="readStory()">
+
+Listen
+
+</button>
+
+<button
+type="button"
+class="check"
+onclick="checkAnswers()">
+
+Check
+
+</button>
+
+<form method="POST">
+
+<button class="reset" name="reset">
+Reset
+</button>
+
+</form>
+
+<?php endif; ?>
 
 </div>
 
-<div class="story" id="story"></div>
 
-<div id="questions"></div>
 
-<div class="result" id="result"></div>
+<?php if(isset($_SESSION["exercise"])):
 
-<div class="stats" id="stats">
-Total Score: 0
+$exercise=$_SESSION["exercise"];
+
+?>
+
+<div
+class="story"
+id="story">
+
+<?= nl2br(htmlspecialchars($exercise["story"])) ?>
+
 </div>
 
-<div class="counter" id="counter">
-Exercise 1 / Infinite
-</div>
+
+<div id="quiz">
+
+<?php
+
+foreach($exercise["questions"] as $index=>$q):
+
+?>
+
+<div class="question">
+
+<p>
+
+<?= ($index+1).". ".htmlspecialchars($q["question"]) ?>
+
+</p>
+
+<?php
+
+foreach($q["options"] as $option):
+
+?>
+
+<label>
+
+<input
+type="radio"
+name="q<?= $index ?>"
+value="<?= htmlspecialchars($option) ?>">
+
+<?= htmlspecialchars($option) ?>
+
+</label>
+
+<?php endforeach; ?>
 
 </div>
+
+<?php endforeach; ?>
+
+</div>
+
+
+<div
+class="result"
+id="result">
+
+</div>
+
 
 <script>
 
-/* =======================
-DATA
-======================= */
+const answers = <?= json_encode(
+array_column(
+$exercise["questions"],
+"answer"
+)
+) ?>;
 
-const names = [
-"John","Emma","Lucas","Sophia","Daniel",
-"Olivia","Michael","Anna","David","Julia"
-];
 
-const cities = [
-"London","Rome","Paris","Madrid","Berlin",
-"Toronto","Tokyo","Sydney","Dublin","New York"
-];
-
-const transport = [
-"by bus","by train","by bike","by car","on foot"
-];
-
-const subjects = [
-"English","history","math","science","music","art"
-];
-
-const hobbies = [
-"plays football",
-"reads books",
-"goes swimming",
-"watches movies",
-"plays tennis",
-"studies online",
-"listens to music",
-"goes jogging"
-];
-
-const drinks = [
-"coffee","tea","juice","milk","water"
-];
-
-/* =======================
-VARIABLES
-======================= */
-
-let exercise = 1;
-let totalScore = 0;
-let correctAnswers = {};
-
-/* =======================
-HELPERS
-======================= */
-
-function random(arr){
-return arr[Math.floor(Math.random()*arr.length)];
-}
-
-function shuffle(arr){
-
-for(let i=arr.length-1;i>0;i--){
-
-let j=Math.floor(Math.random()*(i+1));
-
-[arr[i],arr[j]]=[arr[j],arr[i]];
-
-}
-
-return arr;
-
-}
-
-/* =======================
-GENERATE EXERCISE
-======================= */
-
-function generateExercise(){
-
-const person = random(names);
-const city = random(cities);
-const move = random(transport);
-const sub1 = random(subjects);
-
-let sub2 = random(subjects);
-
-while(sub2 === sub1){
-sub2 = random(subjects);
-}
-
-const hobby = random(hobbies);
-const drink = random(drinks);
-
-document.getElementById("story").innerHTML = `
-${person} is a student.<br><br>
-${person} lives in ${city}.<br><br>
-Every morning ${person} wakes up at 7 o'clock.<br><br>
-${person} drinks ${drink} and eats breakfast.<br><br>
-After breakfast, ${person} goes to school ${move}.<br><br>
-${person} likes ${sub1} and ${sub2}.<br><br>
-After school, ${person} ${hobby}.
-`;
-
-correctAnswers = {
-q1: city,
-q2: move,
-q3: sub1 + " and " + sub2
-};
-
-const cityOptions = shuffle([
-city,
-random(cities),
-random(cities)
-]);
-
-const moveOptions = shuffle([
-move,
-random(transport),
-random(transport)
-]);
-
-const subOptions = shuffle([
-sub1 + " and " + sub2,
-random(subjects)+" and "+random(subjects),
-random(subjects)+" and "+random(subjects)
-]);
-
-document.getElementById("questions").innerHTML = `
-
-<div class="question">
-<p>1. Where does ${person} live?</p>
-${renderOptions("q1", cityOptions)}
-</div>
-
-<div class="question">
-<p>2. How does ${person} go to school?</p>
-${renderOptions("q2", moveOptions)}
-</div>
-
-<div class="question">
-<p>3. What subjects does ${person} like?</p>
-${renderOptions("q3", subOptions)}
-</div>
-
-`;
-
-document.getElementById("result").innerHTML = "";
-document.getElementById("counter").innerText =
-"Exercise " + exercise + " / Infinite";
-
-}
-
-/* =======================
-RENDER OPTIONS
-======================= */
-
-function renderOptions(name,options){
-
-let html = "";
-
-options.forEach(option=>{
-
-html += `
-<label>
-<input type="radio" name="${name}" value="${option}">
- ${option}
-</label>
-`;
-
-});
-
-return html;
-
-}
-
-/* =======================
-CHECK ANSWERS
-======================= */
-
-function checkAnswers(){
-
-let score = 0;
-
-/* remove old styles */
-document.querySelectorAll("label").forEach(l=>{
-l.classList.remove("correct","wrong");
-});
-
-for(let key in correctAnswers){
-
-const radios =
-document.querySelectorAll(`input[name="${key}"]`);
-
-radios.forEach(radio=>{
-
-const label = radio.parentElement;
-
-/* correct answer highlighted */
-if(radio.value === correctAnswers[key]){
-label.classList.add("correct");
-}
-
-/* selected wrong */
-if(radio.checked &&
-radio.value !== correctAnswers[key]){
-label.classList.add("wrong");
-}
-
-});
-
-/* count score */
-const selected =
-document.querySelector(`input[name="${key}"]:checked`);
-
-if(selected &&
-selected.value === correctAnswers[key]){
-score++;
-}
-
-}
-
-totalScore += score;
-
-document.getElementById("result").innerHTML =
-"🎯 Score: " + score + " / 3";
-
-document.getElementById("stats").innerHTML =
-"Total Score: " + totalScore;
-
-}
-
-/* =======================
-NEXT
-======================= */
-
-function nextExercise(){
-
-exercise++;
-generateExercise();
-
-}
-
-/* =======================
-RESET
-======================= */
-
-function resetStats(){
-
-exercise = 1;
-totalScore = 0;
-
-document.getElementById("stats").innerHTML =
-"Total Score: 0";
-
-generateExercise();
-
-}
-
-/* =======================
-VOICE
-======================= */
 
 function readStory(){
 
 const text =
-document.getElementById("story").innerText;
+document
+.getElementById("story")
+.innerText;
 
-const speech =
+
+let speech =
 new SpeechSynthesisUtterance(text);
 
-speech.lang = "en-US";
-speech.rate = 0.95;
+
+speech.lang="en-US";
+
+speech.rate=.95;
+
 
 speechSynthesis.cancel();
+
 speechSynthesis.speak(speech);
 
 }
 
-/* START */
 
-generateExercise();
+
+function checkAnswers(){
+
+let score=0;
+
+
+document
+.querySelectorAll("label")
+.forEach(el=>{
+
+el.classList.remove(
+"correct",
+"wrong"
+);
+
+});
+
+
+answers.forEach((correct,index)=>{
+
+let radios=
+document.querySelectorAll(
+`input[name="q${index}"]`
+);
+
+
+radios.forEach(radio=>{
+
+let label=
+radio.parentElement;
+
+
+if(
+radio.value===correct
+){
+
+label.classList.add(
+"correct"
+);
+
+}
+
+
+if(
+radio.checked &&
+radio.value!==correct
+){
+
+label.classList.add(
+"wrong"
+);
+
+}
+
+});
+
+
+let selected=
+document.querySelector(
+`input[name="q${index}"]:checked`
+);
+
+
+if(
+selected &&
+selected.value===correct
+){
+
+score++;
+
+}
+
+});
+
+
+document
+.getElementById("result")
+.innerHTML=
+
+"Score: "+
+score+
+" / "+
+answers.length;
+
+}
 
 </script>
+
+
+<?php else: ?>
+
+<div class="story">
+
+Click "Generate Exercise"
+to create your first AI lesson.
+
+</div>
+
+<?php endif; ?>
+
+</div>
 
 </body>
 </html>
