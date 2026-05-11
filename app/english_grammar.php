@@ -6,7 +6,7 @@ session_start();
 CONFIG
 =========================== */
 
-$apiKey = "YOUR_COHERE_API_KEY";
+$apiKey = "Uw540GN865rNyiOs3VMnWhRaYQ97KAfudAHAnXzJY";
 $apiUrl = "https://api.cohere.ai/v1/chat";
 
 
