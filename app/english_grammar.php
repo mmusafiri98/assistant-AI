@@ -59,7 +59,7 @@ Rules:
 
 $data = [
 
-"model"=>"command-r-plus",
+"model"=>"command-a-vision-07-2025",
 "message"=>$prompt,
 "temperature"=>0.7
 
